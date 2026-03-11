@@ -44,19 +44,171 @@ app.post("/generate-drawing", async (req, res) => {
             content: prompt,
           },
         ],
+        temperature: 0.2,
       },
       timeout: 30000,
     });
-
-    const aiText = response.data.choices[0].message.content;
+    let aiText = response.data.choices[0].message.content;
 
     console.log("AI RAW RESPONSE:", aiText);
 
+    /* remove markdown */
+    aiText = aiText
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
     try {
       const parsed = JSON.parse(aiText);
-      res.json(parsed);
+
+      const objects = [];
+
+      const layout = parsed.layout || parsed;
+
+      /* ================= SITE ================= */
+
+      if (layout.site) {
+        objects.push({
+          type: "rectangle",
+          x: 0,
+          y: 0,
+          width: layout.site.length || 200,
+          height: layout.site.width || 200,
+          label: "Site",
+        });
+      }
+
+      /* ================= STRUCTURE ================= */
+
+      if (layout.structure) {
+        const pos = layout.structure.position || { x: 50, y: 50 };
+
+        objects.push({
+          type: "rectangle",
+          x: pos.x,
+          y: pos.y,
+          width: layout.structure.length || 50,
+          height: layout.structure.width || 30,
+          label: "Building",
+        });
+      }
+
+      /* ================= OBJECT LIST ================= */
+
+      if (layout.objects) {
+        layout.objects.forEach((o) => {
+          if (o.type === "rectangle") {
+            const pos = o.position || { x: 0, y: 0 };
+
+            objects.push({
+              type: "rectangle",
+              x: pos.x,
+              y: pos.y,
+              width: o.width || o.length || 40,
+              height: o.height || o.width || 40,
+              label: "Structure",
+            });
+          }
+
+          if (o.type === "circle") {
+            const pos = o.position || { x: 0, y: 0 };
+
+            objects.push({
+              type: "circle",
+              x: pos.x,
+              y: pos.y,
+              radius: o.radius || 5,
+              label: o.label || "Equipment",
+            });
+          }
+        });
+      }
+
+      /* ================= EQUIPMENT ================= */
+
+      if (layout.equipment) {
+        layout.equipment.forEach((eq) => {
+          const pos = eq.position || { x: 0, y: 0 };
+
+          objects.push({
+            type: "circle",
+            x: pos.x,
+            y: pos.y,
+            radius: eq.radius || 5,
+            label: eq.label || eq.type || "Equipment",
+          });
+        });
+      }
+
+      /* ================= PIPES ================= */
+
+      if (layout.pipes) {
+        layout.pipes.forEach((pipe) => {
+          const start = pipe.start || pipe.position?.start || { x: 0, y: 0 };
+          const end = pipe.end || pipe.position?.end || { x: 50, y: 50 };
+
+          objects.push({
+            type: "pipe",
+            x1: start.x,
+            y1: start.y,
+            x2: end.x,
+            y2: end.y,
+            label: "Pipe",
+          });
+        });
+      }
+
+      /* ================= LINES ================= */
+
+      if (layout.lines) {
+        layout.lines.forEach((line) => {
+          objects.push({
+            type: "line",
+            x1: line.start.x,
+            y1: line.start.y,
+            x2: line.end.x,
+            y2: line.end.y,
+          });
+        });
+      }
+
+      /* ================= DIMENSIONS ================= */
+
+      if (layout.dimensions) {
+        layout.dimensions.forEach((d) => {
+          const start = d.start || { x: 0, y: 0 };
+          const end = d.end || { x: 100, y: 0 };
+
+          objects.push({
+            type: "dimension",
+            x1: start.x,
+            y1: start.y,
+            x2: end.x,
+            y2: end.y,
+            value: d.label || d.text || "Dimension",
+          });
+        });
+      }
+
+      /* ================= TEXT ================= */
+
+      if (layout.text) {
+        layout.text.forEach((t) => {
+          objects.push({
+            type: "text",
+            x: t.position.x,
+            y: t.position.y,
+            text: t.content,
+          });
+        });
+      }
+
+      console.log("Converted Objects:", objects.length);
+
+      res.json({ objects });
     } catch (err) {
-      console.log("AI returned non JSON:", aiText);
+      console.log("JSON PARSE ERROR:", err.message);
+
       res.json({ objects: [] });
     }
   } catch (error) {
@@ -71,6 +223,10 @@ app.post("/generate-drawing", async (req, res) => {
     }
   }
 });
+
+/* ==============================
+   SERVER START
+============================== */
 
 app.listen(PORT, () => {
   console.log(`AI Server running on http://localhost:${PORT}`);

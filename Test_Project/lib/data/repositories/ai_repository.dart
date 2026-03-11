@@ -72,11 +72,12 @@ class AiRepository {
       body: jsonEncode(inputData),
     );
 
-    if (response.statusCode != 200) {
-      throw Exception("AI Server Error: ${response.body}");
-    }
+    final data = jsonDecode(response.body);
 
-    return jsonDecode(response.body);
+    print("AI SERVER RESPONSE:");
+    print(data);
+
+    return data;
   }
 
   /// =========================

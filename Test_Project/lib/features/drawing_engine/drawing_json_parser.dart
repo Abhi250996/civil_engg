@@ -17,6 +17,17 @@ class DrawingJsonParser {
       return objects;
     }
 
+    /// scale meters → pixels
+    const double scale = 8.0;
+
+    /// shift drawing so it appears centered
+    const double offsetX = 200;
+    const double offsetY = 200;
+
+    double sx(num? v) => (v ?? 0).toDouble() * scale + offsetX;
+    double sy(num? v) => (v ?? 0).toDouble() * scale + offsetY;
+    double ss(num? v) => (v ?? 0).toDouble() * scale;
+
     for (final obj in json["objects"]) {
       final type = obj["type"];
 
@@ -25,17 +36,17 @@ class DrawingJsonParser {
         /// LINE
         /// =========================
         case "line":
-          final x1 = obj["x1"] ?? obj["start"]?[0] ?? 0;
-          final y1 = obj["y1"] ?? obj["start"]?[1] ?? 0;
+          final x1 = obj["x1"] ?? obj["start"]?[0];
+          final y1 = obj["y1"] ?? obj["start"]?[1];
 
-          final x2 = obj["x2"] ?? obj["end"]?[0] ?? 0;
-          final y2 = obj["y2"] ?? obj["end"]?[1] ?? 0;
+          final x2 = obj["x2"] ?? obj["end"]?[0];
+          final y2 = obj["y2"] ?? obj["end"]?[1];
 
           objects.add(
             LineObject(
               id: obj["id"] ?? UniqueKey().toString(),
-              start: Offset(x1.toDouble(), y1.toDouble()),
-              end: Offset(x2.toDouble(), y2.toDouble()),
+              start: Offset(sx(x1), sy(y1)),
+              end: Offset(sx(x2), sy(y2)),
             ),
           );
 
@@ -48,11 +59,8 @@ class DrawingJsonParser {
           objects.add(
             CircleObject(
               id: obj["id"] ?? UniqueKey().toString(),
-              center: Offset(
-                (obj["x"] ?? 0).toDouble(),
-                (obj["y"] ?? 0).toDouble(),
-              ),
-              radius: (obj["radius"] ?? 20).toDouble(),
+              center: Offset(sx(obj["x"]), sy(obj["y"])),
+              radius: ss(obj["radius"] ?? 20),
               label: obj["label"],
             ),
           );
@@ -67,10 +75,10 @@ class DrawingJsonParser {
             RectangleObject(
               id: obj["id"] ?? UniqueKey().toString(),
               rect: Rect.fromLTWH(
-                (obj["x"] ?? 0).toDouble(),
-                (obj["y"] ?? 0).toDouble(),
-                (obj["width"] ?? 50).toDouble(),
-                (obj["height"] ?? 50).toDouble(),
+                sx(obj["x"]),
+                sy(obj["y"]),
+                ss(obj["width"] ?? 50),
+                ss(obj["height"] ?? 50),
               ),
               label: obj["label"],
             ),
@@ -85,10 +93,7 @@ class DrawingJsonParser {
           objects.add(
             TextObject(
               id: obj["id"] ?? UniqueKey().toString(),
-              position: Offset(
-                (obj["x"] ?? 0).toDouble(),
-                (obj["y"] ?? 0).toDouble(),
-              ),
+              position: Offset(sx(obj["x"]), sy(obj["y"])),
               text: obj["text"] ?? "",
             ),
           );
@@ -99,17 +104,17 @@ class DrawingJsonParser {
         /// PIPE
         /// =========================
         case "pipe":
-          final x1 = obj["x1"] ?? obj["start"]?[0] ?? 0;
-          final y1 = obj["y1"] ?? obj["start"]?[1] ?? 0;
+          final x1 = obj["x1"] ?? obj["start"]?[0];
+          final y1 = obj["y1"] ?? obj["start"]?[1];
 
-          final x2 = obj["x2"] ?? obj["end"]?[0] ?? 0;
-          final y2 = obj["y2"] ?? obj["end"]?[1] ?? 0;
+          final x2 = obj["x2"] ?? obj["end"]?[0];
+          final y2 = obj["y2"] ?? obj["end"]?[1];
 
           objects.add(
             PipeObject(
               id: obj["id"] ?? UniqueKey().toString(),
-              start: Offset(x1.toDouble(), y1.toDouble()),
-              end: Offset(x2.toDouble(), y2.toDouble()),
+              start: Offset(sx(x1), sy(y1)),
+              end: Offset(sx(x2), sy(y2)),
               pipeLabel: obj["label"],
             ),
           );
@@ -139,10 +144,7 @@ class DrawingJsonParser {
           objects.add(
             EquipmentObject(
               id: obj["id"] ?? UniqueKey().toString(),
-              position: Offset(
-                (obj["x"] ?? 0).toDouble(),
-                (obj["y"] ?? 0).toDouble(),
-              ),
+              position: Offset(sx(obj["x"]), sy(obj["y"])),
               type: typeEnum,
               label: obj["label"],
             ),
@@ -154,17 +156,17 @@ class DrawingJsonParser {
         /// DIMENSION
         /// =========================
         case "dimension":
-          final x1 = obj["x1"] ?? obj["start"]?[0] ?? 0;
-          final y1 = obj["y1"] ?? obj["start"]?[1] ?? 0;
+          final x1 = obj["x1"] ?? obj["start"]?[0];
+          final y1 = obj["y1"] ?? obj["start"]?[1];
 
-          final x2 = obj["x2"] ?? obj["end"]?[0] ?? 0;
-          final y2 = obj["y2"] ?? obj["end"]?[1] ?? 0;
+          final x2 = obj["x2"] ?? obj["end"]?[0];
+          final y2 = obj["y2"] ?? obj["end"]?[1];
 
           objects.add(
             DimensionObject(
               id: obj["id"] ?? UniqueKey().toString(),
-              start: Offset(x1.toDouble(), y1.toDouble()),
-              end: Offset(x2.toDouble(), y2.toDouble()),
+              start: Offset(sx(x1), sy(y1)),
+              end: Offset(sx(x2), sy(y2)),
               value: obj["value"] ?? "",
             ),
           );
