@@ -62,12 +62,11 @@ class AiRepository {
   /// =========================
   /// AI DRAWING GENERATION
   /// =========================
-
   Future<Map<String, dynamic>> generateDrawing({
     required Map<String, dynamic> inputData,
   }) async {
     final response = await http.post(
-      Uri.parse("$serverUrl/generate-drawing"),
+      Uri.parse("http://localhost:3000/generate-drawing"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(inputData),
     );
