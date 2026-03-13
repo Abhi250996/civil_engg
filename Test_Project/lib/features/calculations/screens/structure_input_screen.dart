@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-import '../../../core/utils/validators.dart';
 import '../../../core/constants/route_constants.dart';
 import '../controllers/calculation_controller.dart';
 
@@ -14,458 +12,268 @@ class StructureInputScreen extends StatefulWidget {
 
 class _StructureInputScreenState extends State<StructureInputScreen> {
   final CalculationController controller = Get.find();
-
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final args = Get.arguments ?? {};
+  static const primaryBlue = Color(0xFF1E3A8A);
+  static const accentBlue = Color(0xFF3B82F6);
+  static const bgColor = Color(0xFFF8FAFC);
+  static const borderColor = Color(0xFFE5E7EB);
 
-  late final String structureType;
+  // Controllers
+  final projectNameController = TextEditingController();
+  final lengthController = TextEditingController();
+  final widthController = TextEditingController();
+  final floorsController = TextEditingController(text: "1");
+  final frontSetbackController = TextEditingController(text: "1.5");
+  final sideSetbackController = TextEditingController(text: "1.0");
+  final roomsController = TextEditingController(text: "2");
+
+  // Specific Controllers for Road/Industry
+  final thicknessController = TextEditingController(text: "200"); // mm
+  final loadController = TextEditingController(text: "50"); // Tons
+
+  String unitSystem = "Metric";
+  String orientation = "North";
+  late String structureType;
 
   @override
   void initState() {
     super.initState();
-    structureType = (args["type"] ?? "building").toString();
+    // Getting type from arguments
+    structureType = (Get.arguments?["type"] ?? "building").toString();
   }
-
-  /// =========================
-  /// PROJECT
-  /// =========================
-
-  final projectNameController = TextEditingController();
-
-  String unitSystem = "Metric";
-  String drawingScale = "1:100";
-  String northDirection = "North";
-
-  /// =========================
-  /// SITE
-  /// =========================
-
-  final lengthController = TextEditingController();
-  final widthController = TextEditingController();
-
-  String soilType = "Clay";
-
-  /// =========================
-  /// STRUCTURE
-  /// =========================
-
-  final floorsController = TextEditingController();
-  final columnSpacingController = TextEditingController();
-
-  String structureSystem = "RCC";
-  String foundationType = "Isolated Footing";
-
-  /// =========================
-  /// MATERIAL
-  /// =========================
-
-  String concreteGrade = "M25";
-  String steelGrade = "Fe500";
-
-  /// =========================
-  /// ROAD
-  /// =========================
-
-  final roadWidthController = TextEditingController();
-  final drainSlopeController = TextEditingController();
-
-  /// =========================
-  /// INDUSTRIAL
-  /// =========================
-
-  final tanksController = TextEditingController();
-  final pumpsController = TextEditingController();
-  final pipeDiameterController = TextEditingController();
-
-  /// =========================
-  /// UTILITIES
-  /// =========================
-
-  bool waterSupply = true;
-  bool sewerSystem = true;
-  bool electricalLayout = true;
-  bool hvacSystem = false;
-
-  /// =========================
-  /// NOTES
-  /// =========================
-
-  final descriptionController = TextEditingController();
-
-  /// =========================
-  /// GENERATE DRAWING
-  /// =========================
-
-  void generateDrawing() {
-    if (!_formKey.currentState!.validate()) return;
-
-    String prompt =
-        """
-Generate a professional civil engineering drawing.
-
-Project:
-Name: ${projectNameController.text}
-Units: $unitSystem
-Scale: $drawingScale
-North: $northDirection
-
-Site:
-Length: ${lengthController.text} m
-Width: ${widthController.text} m
-Soil type: $soilType
-""";
-
-    /// STRUCTURE
-
-    if (structureType == "building" ||
-        structureType == "plant" ||
-        structureType == "factory") {
-      prompt +=
-          """
-
-Structure:
-Floors: ${floorsController.text}
-Column spacing: ${columnSpacingController.text}
-Structure system: $structureSystem
-Foundation: $foundationType
-""";
-    }
-
-    /// ROAD
-
-    if (structureType == "road") {
-      prompt +=
-          """
-
-Road Design:
-Road width: ${roadWidthController.text}
-Drain slope: ${drainSlopeController.text}
-""";
-    }
-
-    /// INDUSTRIAL
-
-    if (structureType == "plant" || structureType == "factory") {
-      prompt +=
-          """
-
-Industrial Equipment:
-Tanks: ${tanksController.text}
-Pumps: ${pumpsController.text}
-Pipe diameter: ${pipeDiameterController.text}
-""";
-    }
-
-    /// MATERIAL
-
-    if (structureType != "road") {
-      prompt +=
-          """
-
-Materials:
-Concrete: $concreteGrade
-Steel: $steelGrade
-""";
-    }
-
-    /// UTILITIES
-
-    prompt +=
-        """
-
-Utilities:
-Water supply: $waterSupply
-Sewer system: $sewerSystem
-Electrical: $electricalLayout
-HVAC: $hvacSystem
-""";
-
-    if (descriptionController.text.isNotEmpty) {
-      prompt +=
-          """
-
-Engineer Instructions:
-${descriptionController.text}
-""";
-    }
-
-    controller.generateAIDrawing(prompt);
-
-    Get.toNamed(RouteConstants.drawingResult);
-  }
-
-  /// =========================
-  /// SECTION TITLE
-  /// =========================
-
-  Widget sectionTitle(String text) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  /// =========================
-  /// BUILD
-  /// =========================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Civil Engineering Inputs")),
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        toolbarHeight: 60,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: primaryBlue, size: 22),
+          onPressed: () => Get.back(),
+        ),
+        title: Text('${structureType.toUpperCase()} DESIGNER',
+            style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.w900, fontSize: 16)),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          bool isDesktop = constraints.maxWidth > 900;
 
-      body: Center(
-        child: SizedBox(
-          width: 700,
-          child: Padding(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
-
-            child: SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-
-                child: Column(
-                  children: [
-                    /// =========================
-                    /// PROJECT
-                    /// =========================
-                    sectionTitle("Project Information"),
-
-                    TextFormField(
-                      controller: projectNameController,
-                      decoration: const InputDecoration(
-                        labelText: "Project Name",
-                        prefixIcon: Icon(Icons.business),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    DropdownButtonFormField(
-                      value: unitSystem,
-                      items: const [
-                        DropdownMenuItem(
-                          value: "Metric",
-                          child: Text("Metric (m, mm)"),
-                        ),
-                        DropdownMenuItem(
-                          value: "Imperial",
-                          child: Text("Imperial (ft, in)"),
-                        ),
-                      ],
-                      onChanged: (v) => unitSystem = v.toString(),
-                      decoration: const InputDecoration(
-                        labelText: "Unit System",
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    /// =========================
-                    /// SITE
-                    /// =========================
-                    sectionTitle("Site Details"),
-
-                    TextFormField(
-                      controller: lengthController,
-                      keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          Validators.validatePositiveNumber(v, "Length"),
-                      decoration: const InputDecoration(
-                        labelText: "Plot Length (m)",
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: widthController,
-                      keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          Validators.validatePositiveNumber(v, "Width"),
-                      decoration: const InputDecoration(
-                        labelText: "Plot Width (m)",
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    DropdownButtonFormField(
-                      value: soilType,
-                      items: const [
-                        DropdownMenuItem(value: "Clay", child: Text("Clay")),
-                        DropdownMenuItem(value: "Sand", child: Text("Sand")),
-                        DropdownMenuItem(
-                          value: "Gravel",
-                          child: Text("Gravel"),
-                        ),
-                        DropdownMenuItem(value: "Rock", child: Text("Rock")),
-                      ],
-                      onChanged: (v) => soilType = v.toString(),
-                      decoration: const InputDecoration(labelText: "Soil Type"),
-                    ),
-
-                    /// =========================
-                    /// STRUCTURE
-                    /// =========================
-                    if (structureType == "building" ||
-                        structureType == "factory" ||
-                        structureType == "plant") ...[
-                      const SizedBox(height: 30),
-
-                      sectionTitle("Structure Details"),
-
-                      TextFormField(
-                        controller: floorsController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Number of Floors",
-                        ),
+            child: Form(
+              key: _formKey,
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: isDesktop ? 1100 : 600),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _sectionTitle("General Information"),
+                      _buildResponsiveLayout(
+                        isDesktop: isDesktop,
+                        children: [
+                          _buildTextField(projectNameController, "Project Name", Icons.business),
+                          _buildDropdown("Unit System", unitSystem, ["Metric", "Imperial"], (v) => setState(() => unitSystem = v!)),
+                        ],
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 25),
 
-                      TextFormField(
-                        controller: columnSpacingController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Column Spacing",
+                      // --- DYNAMIC FILTERING BASED ON TYPE ---
+                      if (structureType == "building") ..._buildHouseInputs(isDesktop),
+                      if (structureType == "road") ..._buildRoadInputs(isDesktop),
+                      if (structureType == "factory" || structureType == "plant") ..._buildIndustrialInputs(isDesktop),
+
+                      const SizedBox(height: 40),
+
+                      // Status Message display
+                      Obx(() => controller.statusMessage.isNotEmpty
+                          ? Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Center(child: Text(controller.statusMessage.value, style: const TextStyle(color: accentBlue, fontWeight: FontWeight.bold))),
+                      )
+                          : const SizedBox.shrink()),
+
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 400),
+                          child: _buildGenerateButton(),
                         ),
                       ),
                     ],
-
-                    /// =========================
-                    /// ROAD
-                    /// =========================
-                    if (structureType == "road") ...[
-                      const SizedBox(height: 30),
-
-                      sectionTitle("Road Design"),
-
-                      TextFormField(
-                        controller: roadWidthController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Road Width",
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: drainSlopeController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Drain Slope",
-                        ),
-                      ),
-                    ],
-
-                    /// =========================
-                    /// INDUSTRIAL
-                    /// =========================
-                    if (structureType == "plant" ||
-                        structureType == "factory") ...[
-                      const SizedBox(height: 30),
-
-                      sectionTitle("Industrial Equipment"),
-
-                      TextFormField(
-                        controller: tanksController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Number of Tanks",
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: pumpsController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Number of Pumps",
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: pipeDiameterController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Pipe Diameter (mm)",
-                        ),
-                      ),
-                    ],
-
-                    /// =========================
-                    /// UTILITIES
-                    /// =========================
-                    const SizedBox(height: 30),
-
-                    sectionTitle("Utilities"),
-
-                    CheckboxListTile(
-                      value: waterSupply,
-                      title: const Text("Water Supply"),
-                      onChanged: (v) => setState(() => waterSupply = v!),
-                    ),
-
-                    CheckboxListTile(
-                      value: sewerSystem,
-                      title: const Text("Sewer System"),
-                      onChanged: (v) => setState(() => sewerSystem = v!),
-                    ),
-
-                    CheckboxListTile(
-                      value: electricalLayout,
-                      title: const Text("Electrical Layout"),
-                      onChanged: (v) => setState(() => electricalLayout = v!),
-                    ),
-
-                    CheckboxListTile(
-                      value: hvacSystem,
-                      title: const Text("HVAC System"),
-                      onChanged: (v) => setState(() => hvacSystem = v!),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    /// =========================
-                    /// ENGINEER NOTES
-                    /// =========================
-                    sectionTitle("Engineer Notes"),
-
-                    TextFormField(
-                      controller: descriptionController,
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        labelText: "Special Instructions",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: generateDrawing,
-                        child: const Text("Generate Engineering Drawing"),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
+    );
+  }
+
+  // --- HOUSE SPECIFIC INPUTS ---
+  List<Widget> _buildHouseInputs(bool isDesktop) {
+    return [
+      _sectionTitle("Plot Dimensions & Orientation"),
+      _buildResponsiveLayout(isDesktop: isDesktop, children: [
+        _buildTextField(lengthController, "Length (m)", Icons.straighten, isNum: true),
+        _buildTextField(widthController, "Width (m)", Icons.square_foot, isNum: true),
+        _buildDropdown("Facing", orientation, ["North", "South", "East", "West"], (v) => setState(() => orientation = v!)),
+      ]),
+      const SizedBox(height: 25),
+      _sectionTitle("Setbacks & Requirements"),
+      _buildResponsiveLayout(isDesktop: isDesktop, children: [
+        _buildTextField(frontSetbackController, "Front (m)", Icons.door_front_door, isNum: true),
+        _buildTextField(floorsController, "Floors", Icons.layers, isNum: true),
+        _buildTextField(roomsController, "BHK", Icons.bed, isNum: true),
+      ]),
+    ];
+  }
+
+  // --- ROAD SPECIFIC INPUTS ---
+  List<Widget> _buildRoadInputs(bool isDesktop) {
+    return [
+      _sectionTitle("Road Geometry"),
+      _buildResponsiveLayout(isDesktop: isDesktop, children: [
+        _buildTextField(lengthController, "Total Length (km)", Icons.add_road, isNum: true),
+        _buildTextField(widthController, "Carriageway Width (m)", Icons.width_full, isNum: true),
+        _buildTextField(thicknessController, "Pavement Thick (mm)", Icons.layers_outlined, isNum: true),
+      ]),
+    ];
+  }
+
+  // --- INDUSTRIAL SPECIFIC INPUTS ---
+  List<Widget> _buildIndustrialInputs(bool isDesktop) {
+    return [
+      _sectionTitle("Plant Capacity & Area"),
+      _buildResponsiveLayout(isDesktop: isDesktop, children: [
+        _buildTextField(lengthController, "Shed Length (m)", Icons.factory, isNum: true),
+        _buildTextField(widthController, "Shed Width (m)", Icons.aspect_ratio, isNum: true),
+        _buildTextField(loadController, "Floor Load (T/m2)", Icons.fitness_center, isNum: true),
+      ]),
+    ];
+  }
+
+  // --- REUSABLE COMPONENTS ---
+
+  Widget _buildResponsiveLayout({required bool isDesktop, required List<Widget> children}) {
+    if (isDesktop) {
+      return Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: borderColor)),
+        child: Row(children: children.map((c) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: c))).toList()),
+      );
+    } else {
+      return Column(children: children.map((c) => Padding(padding: const EdgeInsets.only(bottom: 12), child: c)).toList());
+    }
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(title.toUpperCase(), style: const TextStyle(color: primaryBlue, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1)),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController ctrl, String label, IconData icon, {bool isNum = false}) {
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: isNum ? TextInputType.number : TextInputType.text,
+      validator: (v) => v == null || v.isEmpty ? "Required" : null,
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryBlue),
+      decoration: InputDecoration(
+        labelText: label,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        prefixIcon: Icon(icon, size: 20, color: accentBlue),
+        labelStyle: TextStyle(color: primaryBlue.withOpacity(0.6), fontSize: 14, fontWeight: FontWeight.w600),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: borderColor, width: 1.5)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: accentBlue, width: 2)),
+      ),
+    );
+  }
+
+  Widget _buildDropdown(String label, String value, List<String> items, Function(String?) onChanged) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      iconSize: 24,
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryBlue),
+      decoration: InputDecoration(
+        labelText: label,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        labelStyle: TextStyle(color: primaryBlue.withOpacity(0.6), fontSize: 14, fontWeight: FontWeight.w600),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: borderColor, width: 1.5)),
+      ),
+      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildGenerateButton() {
+    return SizedBox(
+      height: 60,
+      width: double.infinity,
+      child: Obx(() => ElevatedButton.icon(
+        icon: controller.isLoading.value
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : const Icon(Icons.architecture_rounded, size: 24),
+        label: Text(
+            controller.isLoading.value ? "PROCESSING..." : "GENERATE PROFESSIONAL PLAN",
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)
+        ),
+        onPressed: controller.isLoading.value ? null : () {
+          if (_formKey.currentState!.validate()) {
+            // DATA COLLECTION START
+            Map<String, dynamic> dataToSave = {
+              "projectName": projectNameController.text,
+              "unit": unitSystem,
+              "length": lengthController.text,
+              "width": widthController.text,
+            };
+
+            // Adding type specific data
+            if (structureType == "building") {
+              dataToSave.addAll({
+                "orientation": orientation,
+                "frontSetback": frontSetbackController.text,
+                "sideSetback": sideSetbackController.text,
+                "floors": floorsController.text,
+                "rooms": roomsController.text,
+              });
+            } else if (structureType == "road") {
+              dataToSave.addAll({
+                "thickness": thicknessController.text,
+              });
+            } else if (structureType == "factory" || structureType == "plant") {
+              dataToSave.addAll({
+                "load": loadController.text,
+              });
+            }
+
+            // FINAL CALL TO CONTROLLER
+            controller.generateDrawingFromInputs(
+                type: structureType,
+                inputData: dataToSave
+            );
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        ),
+      )),
     );
   }
 }

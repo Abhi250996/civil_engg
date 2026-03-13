@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../core/constants/route_constants.dart';
 import '../../../data/models/project_model.dart';
 import '../controllers/project_controller.dart';
@@ -15,8 +14,13 @@ class ProjectListScreen extends StatefulWidget {
 
 class _ProjectListScreenState extends State<ProjectListScreen> {
   final ProjectController controller = Get.find();
-
   final TextEditingController searchController = TextEditingController();
+
+  // Consistent Eye-Friendly Palette
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color accentBlue = Color(0xFF3B82F6);
+  static const Color bgColor = Color(0xFFE2E8F0);     // Darker matte gray (No reflection)
+  static const Color cardBg = Color(0xFFF1F5F9);
 
   @override
   void initState() {
@@ -24,114 +28,152 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     controller.loadProjects();
   }
 
-  int getCrossAxisCount(double width) {
-    if (width > 1400) return 4;
-    if (width > 1000) return 3;
-    if (width > 700) return 2;
-    return 1;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text("Projects"),
-
+        backgroundColor: primaryBlue, // Colorful Header like Create Screen
+        elevation: 0,
+        iconTheme: IconThemeData(
+          color: Colors.white, // Sets all icons in the AppBar to white
+        ),        toolbarHeight: 50,
+        title: const Text(
+          "PROJECT INVENTORY",
+          style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              letterSpacing: 1.5
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            tooltip: "Sync Data",
+            icon: const Icon(Icons.sync_rounded, color: Colors.white, size: 20),
             onPressed: controller.refreshProjects,
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Get.toNamed(RouteConstants.createProject),
+        backgroundColor: primaryBlue,
+        elevation: 4,
+        icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
+        label: const Text("NEW PROJECT", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+      ),
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1400),
+                child: Obx(() {
+                  if (controller.isLoading.value) {
+                    return const Center(child: CircularProgressIndicator(color: primaryBlue));
+                  }
+
+                  if (controller.filteredProjects.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: controller.refreshProjects,
+                    color: primaryBlue,
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(15),
+                      itemCount: controller.filteredProjects.length,
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 400,
+                        mainAxisExtent: 180, // Slimmer cards
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                      itemBuilder: (context, index) {
+                        ProjectModel project = controller.filteredProjects[index];
+                        // ProjectCard will handle the dd-MM-yyyy internally
+                        return ProjectCard(
+                          project: project,
+                          onTap: () => controller.openProject(project),
+                          onDelete: () => controller.deleteProject(project.id),
+                        );
+                      },
+                    ),
+                  );
+                }),
+              ),
+            ),
           ),
         ],
       ),
+    );
+  }
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Get.toNamed(RouteConstants.createProject);
-        },
-        icon: const Icon(Icons.add),
-        label: const Text("New Project"),
-      ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-
-        child: Column(
-          children: [
-            /// SEARCH BAR
-            TextField(
-              controller: searchController,
-              onChanged: controller.searchProjects,
-              decoration: InputDecoration(
-                hintText: "Search projects...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(15, 12, 15, 12),
+      color: primaryBlue.withOpacity(0.05), // Subtle blue tint
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: TextField(
+            controller: searchController,
+            onChanged: controller.searchProjects,
+            style: const TextStyle(fontSize: 13),
+            decoration: InputDecoration(
+              hintText: "Search by project name, category or location...",
+              hintStyle: TextStyle(color: primaryBlue.withOpacity(0.4), fontSize: 12),
+              prefixIcon: const Icon(Icons.search_sharp, color: primaryBlue, size: 20),
+              filled: true,
+              fillColor: Colors.white,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.black.withOpacity(0.05)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: accentBlue, width: 1),
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            /// PROJECT LIST
-            Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (controller.filteredProjects.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.folder_open, size: 60, color: Colors.grey),
-                        SizedBox(height: 10),
-                        Text(
-                          "No projects found",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: controller.refreshProjects,
-
-                  child: GridView.builder(
-                    itemCount: controller.filteredProjects.length,
-
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: getCrossAxisCount(width),
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: width < 700 ? 1.1 : 1.4,
-                    ),
-
-                    itemBuilder: (context, index) {
-                      ProjectModel project = controller.filteredProjects[index];
-
-                      return ProjectCard(
-                        project: project,
-
-                        onTap: () {
-                          controller.openProject(project);
-                        },
-
-                        onDelete: () {
-                          controller.deleteProject(project.id);
-                        },
-                      );
-                    },
-                  ),
-                );
-              }),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 60),
+          Icon(Icons.assignment_late_outlined, size: 70, color: primaryBlue.withOpacity(0.2)),
+          const SizedBox(height: 16),
+          Text(
+            "No Projects Found",
+            style: TextStyle(color: primaryBlue.withOpacity(0.6), fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Try a different search or create a new entry.",
+            style: TextStyle(color: primaryBlue.withOpacity(0.4), fontSize: 12),
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: controller.refreshProjects,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text("REFRESH LIST"),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryBlue,
+              side: BorderSide(color: primaryBlue.withOpacity(0.2)),
+            ),
+          )
+        ],
       ),
     );
   }
