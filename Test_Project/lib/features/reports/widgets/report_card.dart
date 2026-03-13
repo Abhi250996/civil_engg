@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../data/models/report_model.dart';
 
 class ReportCard extends StatelessWidget {
@@ -17,8 +16,7 @@ class ReportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-
+      elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
       child: InkWell(
@@ -28,57 +26,90 @@ class ReportCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
 
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// REPORT ICON
-              const Icon(Icons.description, size: 40, color: Colors.blue),
+              /// HEADER
+              Row(
+                children: [
+                  const Icon(Icons.description, color: Colors.blue, size: 28),
 
-              const SizedBox(width: 16),
+                  const SizedBox(width: 10),
 
-              /// REPORT DETAILS
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// TITLE
-                    Text(
+                  Expanded(
+                    child: Text(
                       report.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 4),
-
-                    /// DESCRIPTION
-                    Text(
-                      report.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    /// DATE
-                    Text(
-                      report.createdAt.toLocal().toString().split(" ")[0],
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                  ],
-                ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: onDelete,
+                  ),
+                ],
               ),
 
-              /// DELETE BUTTON
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: onDelete,
+              const SizedBox(height: 8),
+
+              /// DESCRIPTION
+              Text(
+                report.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+
+              const SizedBox(height: 12),
+
+              /// REPORT TYPE
+              _infoRow("Type", report.reportType),
+
+              /// AUTHOR
+              _infoRow("Author", report.author ?? "-"),
+
+              /// STATUS
+              if (report.status != null)
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    report.status!,
+                    style: const TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
+                ),
+
+              const Spacer(),
+
+              /// DATE
+              Text(
+                report.createdAt.toLocal().toString().split(" ")[0],
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+
+      child: Text("$label: $value", style: const TextStyle(fontSize: 13)),
     );
   }
 }

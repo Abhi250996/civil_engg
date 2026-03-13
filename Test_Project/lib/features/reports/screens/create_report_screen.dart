@@ -16,90 +16,278 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController filePathController = TextEditingController();
+  /// CONTROLLERS
+  final titleController = TextEditingController();
+  final descriptionController = TextEditingController();
+  final filePathController = TextEditingController();
+  final authorController = TextEditingController();
+  final engineerController = TextEditingController();
+  final organizationController = TextEditingController();
+  final locationController = TextEditingController();
 
-  /// =========================
+  /// DROPDOWNS
+  String? reportType;
+  String? category;
+  String? status;
+
   /// CREATE REPORT
-  /// =========================
-
   void createReport() {
     if (!_formKey.currentState!.validate()) return;
 
     controller.createReport(
+      projectId: "1", // Replace with real projectId
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
-      filePath: filePathController.text.trim(),
+      reportType: reportType ?? "General",
+      filePath: controller.selectedFilePath.value,
+      category: category,
+      author: authorController.text,
+      engineer: engineerController.text,
+      organization: organizationController.text,
+      location: locationController.text,
+      status: status,
     );
+  }
+
+  int getColumns(double width) {
+    if (width > 1200) return 3;
+    if (width > 800) return 2;
+    return 1;
+  }
+
+  Widget field(Widget child) {
+    return Padding(padding: const EdgeInsets.all(8), child: child);
   }
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(title: const Text("Create Report")),
 
-      body: Center(
-        child: SizedBox(
-          width: 500,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
 
-            child: Form(
-              key: _formKey,
+        child: Form(
+          key: _formKey,
 
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  /// REPORT TITLE
-                  TextFormField(
-                    controller: titleController,
-                    validator: (value) =>
-                        Validators.validateRequired(value, "Title"),
-                    decoration: const InputDecoration(
-                      labelText: "Report Title",
-                      prefixIcon: Icon(Icons.description),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// BASIC INFO
+                const Text(
+                  "Report Information",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 10),
+
+                GridView.count(
+                  crossAxisCount: getColumns(width),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: 3,
+                  children: [
+                    field(
+                      TextFormField(
+                        controller: titleController,
+                        validator: (v) =>
+                            Validators.validateRequired(v, "Title"),
+                        decoration: const InputDecoration(
+                          labelText: "Report Title",
+                          prefixIcon: Icon(Icons.description),
+                        ),
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
-
-                  /// DESCRIPTION
-                  TextFormField(
-                    controller: descriptionController,
-                    validator: (value) =>
-                        Validators.validateRequired(value, "Description"),
-                    decoration: const InputDecoration(
-                      labelText: "Description",
-                      prefixIcon: Icon(Icons.notes),
+                    field(
+                      DropdownButtonFormField(
+                        value: reportType,
+                        items: const [
+                          DropdownMenuItem(
+                            value: "Structural",
+                            child: Text("Structural"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Geotechnical",
+                            child: Text("Geotechnical"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Environmental",
+                            child: Text("Environmental"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Survey",
+                            child: Text("Survey"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Inspection",
+                            child: Text("Inspection"),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => reportType = v),
+                        decoration: const InputDecoration(
+                          labelText: "Report Type",
+                          prefixIcon: Icon(Icons.category),
+                        ),
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
-
-                  /// FILE PATH
-                  TextFormField(
-                    controller: filePathController,
-                    validator: (value) =>
-                        Validators.validateRequired(value, "File Path"),
-                    decoration: const InputDecoration(
-                      labelText: "File Path",
-                      prefixIcon: Icon(Icons.folder),
+                    field(
+                      DropdownButtonFormField(
+                        value: category,
+                        items: const [
+                          DropdownMenuItem(
+                            value: "Engineering",
+                            child: Text("Engineering"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Safety",
+                            child: Text("Safety"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Construction",
+                            child: Text("Construction"),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => category = v),
+                        decoration: const InputDecoration(
+                          labelText: "Category",
+                          prefixIcon: Icon(Icons.layers),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
+                ),
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 30),
 
-                  /// CREATE BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: createReport,
-                      child: const Text("Create Report"),
+                /// AUTHOR INFO
+                const Text(
+                  "Author Information",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 10),
+
+                GridView.count(
+                  crossAxisCount: getColumns(width),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: 3,
+                  children: [
+                    field(
+                      TextFormField(
+                        controller: authorController,
+                        decoration: const InputDecoration(
+                          labelText: "Author",
+                          prefixIcon: Icon(Icons.person),
+                        ),
+                      ),
                     ),
+
+                    field(
+                      TextFormField(
+                        controller: engineerController,
+                        decoration: const InputDecoration(
+                          labelText: "Engineer",
+                          prefixIcon: Icon(Icons.engineering),
+                        ),
+                      ),
+                    ),
+
+                    field(
+                      TextFormField(
+                        controller: organizationController,
+                        decoration: const InputDecoration(
+                          labelText: "Organization",
+                          prefixIcon: Icon(Icons.business),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+
+                /// FILE
+                Obx(() {
+                  return TextFormField(
+                    readOnly: true,
+                    controller: TextEditingController(
+                      text: controller.selectedFilePath.value,
+                    ),
+                    validator: (v) => Validators.validateRequired(v, "File"),
+                    decoration: InputDecoration(
+                      labelText: "Report File",
+                      prefixIcon: const Icon(Icons.attach_file),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.upload_file),
+                        onPressed: controller.pickFile,
+                      ),
+                    ),
+                  );
+                }),
+
+                const SizedBox(height: 16),
+
+                /// LOCATION
+                TextFormField(
+                  controller: locationController,
+                  decoration: const InputDecoration(
+                    labelText: "Location",
+                    prefixIcon: Icon(Icons.location_on),
                   ),
-                ],
-              ),
+                ),
+
+                const SizedBox(height: 16),
+
+                /// DESCRIPTION
+                TextFormField(
+                  controller: descriptionController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: "Description",
+                    prefixIcon: Icon(Icons.notes),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                /// STATUS
+                DropdownButtonFormField(
+                  value: status,
+                  items: const [
+                    DropdownMenuItem(value: "Draft", child: Text("Draft")),
+                    DropdownMenuItem(
+                      value: "Submitted",
+                      child: Text("Submitted"),
+                    ),
+                    DropdownMenuItem(
+                      value: "Approved",
+                      child: Text("Approved"),
+                    ),
+                  ],
+                  onChanged: (v) => setState(() => status = v),
+                  decoration: const InputDecoration(
+                    labelText: "Status",
+                    prefixIcon: Icon(Icons.check_circle),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                /// BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: createReport,
+                    child: const Text("Create Report"),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

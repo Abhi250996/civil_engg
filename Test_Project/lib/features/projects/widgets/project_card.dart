@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../data/models/project_model.dart';
 
 class ProjectCard extends StatelessWidget {
@@ -17,8 +16,7 @@ class ProjectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-
+      elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
       child: InkWell(
@@ -28,57 +26,84 @@ class ProjectCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
 
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+
             children: [
-              /// PROJECT ICON
-              const Icon(Icons.folder, size: 40, color: Colors.blue),
+              /// HEADER
+              Row(
+                children: [
+                  const Icon(Icons.account_tree, size: 32, color: Colors.blue),
 
-              const SizedBox(width: 16),
+                  const SizedBox(width: 10),
 
-              /// PROJECT DETAILS
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// NAME
-                    Text(
+                  Expanded(
+                    child: Text(
                       project.name,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 4),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
 
-                    /// DESCRIPTION
-                    Text(
-                      project.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
+              const SizedBox(height: 8),
 
-                    const SizedBox(height: 8),
+              /// CATEGORY
+              _info("Category", project.projectCategory ?? "-"),
 
-                    /// SIZE
-                    Text(
-                      "Size: ${project.length} × ${project.width}",
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ],
+              /// LOCATION
+              _info("Location", project.location ?? "-"),
+
+              /// SOIL
+              _info("Soil", project.soilType ?? "-"),
+
+              /// FOUNDATION
+              _info("Foundation", project.foundationType ?? "-"),
+
+              /// SIZE
+              if (project.length != null && project.width != null)
+                _info("Size", "${project.length} × ${project.width}"),
+
+              const Spacer(),
+
+              /// STATUS
+              if (project.projectStatus != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+
+                  child: Text(
+                    project.projectStatus!,
+                    style: const TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
                 ),
-              ),
-
-              /// DELETE BUTTON
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: onDelete,
-              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _info(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+
+      child: Text("$label: $value", style: const TextStyle(fontSize: 13)),
     );
   }
 }

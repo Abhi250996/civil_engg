@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../data/models/project_model.dart';
 
 class ProjectInfoWidget extends StatelessWidget {
@@ -10,8 +9,7 @@ class ProjectInfoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-
+      elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
       child: Padding(
@@ -20,10 +18,23 @@ class ProjectInfoWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// PROJECT NAME
-            Text(
-              project.name,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            /// HEADER
+            Row(
+              children: [
+                const Icon(Icons.account_tree, color: Colors.blue, size: 28),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: Text(
+                    project.name,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 8),
@@ -40,31 +51,81 @@ class ProjectInfoWidget extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            /// PROJECT SIZE
-            Row(
-              children: [
-                const Icon(Icons.straighten, size: 18),
+            /// PROJECT CATEGORY
+            _infoRow(
+              Icons.category,
+              "Category",
+              project.projectCategory ?? "-",
+            ),
 
-                const SizedBox(width: 8),
+            /// LOCATION
+            _infoRow(Icons.location_on, "Location", project.location ?? "-"),
 
-                Text("Size: ${project.length} × ${project.width}"),
-              ],
+            /// SOIL TYPE
+            _infoRow(Icons.terrain, "Soil", project.soilType ?? "-"),
+
+            /// FOUNDATION
+            _infoRow(
+              Icons.foundation,
+              "Foundation",
+              project.foundationType ?? "-",
+            ),
+
+            /// SIZE
+            if (project.length != null && project.width != null)
+              _infoRow(
+                Icons.straighten,
+                "Size",
+                "${project.length} × ${project.width}",
+              ),
+
+            /// CREATED DATE
+            _infoRow(
+              Icons.calendar_today,
+              "Created",
+              project.createdAt.toLocal().toString().split(" ")[0],
             ),
 
             const SizedBox(height: 10),
 
-            /// CREATED DATE
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, size: 18),
+            /// PROJECT STATUS
+            if (project.projectStatus != null)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
 
-                const SizedBox(width: 8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                ),
 
-                Text(project.createdAt.toLocal().toString().split(" ")[0]),
-              ],
-            ),
+                child: Text(
+                  project.projectStatus!,
+                  style: const TextStyle(fontSize: 12, color: Colors.blue),
+                ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+
+      child: Row(
+        children: [
+          Icon(icon, size: 18),
+
+          const SizedBox(width: 8),
+
+          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.w600)),
+
+          Expanded(child: Text(value)),
+        ],
       ),
     );
   }

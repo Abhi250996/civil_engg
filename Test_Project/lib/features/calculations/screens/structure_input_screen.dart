@@ -5,71 +5,102 @@ import '../../../core/utils/validators.dart';
 import '../../../core/constants/route_constants.dart';
 import '../controllers/calculation_controller.dart';
 
-class HouseInputScreen extends StatefulWidget {
-  const HouseInputScreen({super.key});
+class StructureInputScreen extends StatefulWidget {
+  const StructureInputScreen({super.key});
 
   @override
-  State<HouseInputScreen> createState() => _HouseInputScreenState();
+  State<StructureInputScreen> createState() => _StructureInputScreenState();
 }
 
-class _HouseInputScreenState extends State<HouseInputScreen> {
+class _StructureInputScreenState extends State<StructureInputScreen> {
   final CalculationController controller = Get.find();
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final args = Get.arguments ?? {};
 
+  late final String structureType;
+
+  @override
+  void initState() {
+    super.initState();
+    structureType = (args["type"] ?? "building").toString();
+  }
+
+  /// =========================
   /// PROJECT
+  /// =========================
+
   final projectNameController = TextEditingController();
 
   String unitSystem = "Metric";
   String drawingScale = "1:100";
   String northDirection = "North";
 
+  /// =========================
   /// SITE
+  /// =========================
+
   final lengthController = TextEditingController();
   final widthController = TextEditingController();
 
   String soilType = "Clay";
 
+  /// =========================
   /// STRUCTURE
+  /// =========================
+
   final floorsController = TextEditingController();
   final columnSpacingController = TextEditingController();
+
   String structureSystem = "RCC";
   String foundationType = "Isolated Footing";
 
-  /// GRID
-  final gridSpacingController = TextEditingController();
-
-  /// LEVELS
-  final plinthLevelController = TextEditingController();
-  final floorHeightController = TextEditingController();
-
+  /// =========================
   /// MATERIAL
+  /// =========================
+
   String concreteGrade = "M25";
   String steelGrade = "Fe500";
 
+  /// =========================
   /// ROAD
+  /// =========================
+
   final roadWidthController = TextEditingController();
   final drainSlopeController = TextEditingController();
-  final descriptionController = TextEditingController();
 
+  /// =========================
+  /// INDUSTRIAL
+  /// =========================
+
+  final tanksController = TextEditingController();
+  final pumpsController = TextEditingController();
+  final pipeDiameterController = TextEditingController();
+
+  /// =========================
   /// UTILITIES
+  /// =========================
+
   bool waterSupply = true;
   bool sewerSystem = true;
   bool electricalLayout = true;
   bool hvacSystem = false;
 
-  /// INDUSTRIAL
-  final tanksController = TextEditingController();
-  final pumpsController = TextEditingController();
-  final pipeDiameterController = TextEditingController();
+  /// =========================
+  /// NOTES
+  /// =========================
+
+  final descriptionController = TextEditingController();
+
+  /// =========================
+  /// GENERATE DRAWING
+  /// =========================
 
   void generateDrawing() {
     if (!_formKey.currentState!.validate()) return;
 
-    final customDescription = descriptionController.text.trim();
-
-    final prompt =
+    String prompt =
         """
 Generate a professional civil engineering drawing.
 
@@ -83,56 +114,90 @@ Site:
 Length: ${lengthController.text} m
 Width: ${widthController.text} m
 Soil type: $soilType
+""";
+
+    /// STRUCTURE
+
+    if (structureType == "building" ||
+        structureType == "plant" ||
+        structureType == "factory") {
+      prompt +=
+          """
 
 Structure:
 Floors: ${floorsController.text}
-Column spacing: ${columnSpacingController.text} m
+Column spacing: ${columnSpacingController.text}
 Structure system: $structureSystem
 Foundation: $foundationType
+""";
+    }
 
-Grid:
-Grid spacing: ${gridSpacingController.text} m
+    /// ROAD
 
-Levels:
-Plinth level: ${plinthLevelController.text} m
-Floor height: ${floorHeightController.text} m
+    if (structureType == "road") {
+      prompt +=
+          """
+
+Road Design:
+Road width: ${roadWidthController.text}
+Drain slope: ${drainSlopeController.text}
+""";
+    }
+
+    /// INDUSTRIAL
+
+    if (structureType == "plant" || structureType == "factory") {
+      prompt +=
+          """
+
+Industrial Equipment:
+Tanks: ${tanksController.text}
+Pumps: ${pumpsController.text}
+Pipe diameter: ${pipeDiameterController.text}
+""";
+    }
+
+    /// MATERIAL
+
+    if (structureType != "road") {
+      prompt +=
+          """
 
 Materials:
 Concrete: $concreteGrade
 Steel: $steelGrade
+""";
+    }
 
-Road:
-Road width: ${roadWidthController.text} m
-Drain slope: ${drainSlopeController.text} %
+    /// UTILITIES
+
+    prompt +=
+        """
 
 Utilities:
 Water supply: $waterSupply
 Sewer system: $sewerSystem
 Electrical: $electricalLayout
 HVAC: $hvacSystem
-
-Industrial Equipment:
-Tanks: ${tanksController.text}
-Pumps: ${pumpsController.text}
-Pipe diameter: ${pipeDiameterController.text} mm
-
-${customDescription.isNotEmpty ? """
-
-Engineer Special Instructions:
-$customDescription
-
-IMPORTANT:
-Prioritize these instructions while generating the layout.
-
-""" : ""}
-
-Return structured drawing objects using:
-rectangle, line, circle, pipe, equipment, dimension, text.
 """;
 
+    if (descriptionController.text.isNotEmpty) {
+      prompt +=
+          """
+
+Engineer Instructions:
+${descriptionController.text}
+""";
+    }
+
     controller.generateAIDrawing(prompt);
+
     Get.toNamed(RouteConstants.drawingResult);
   }
+
+  /// =========================
+  /// SECTION TITLE
+  /// =========================
 
   Widget sectionTitle(String text) {
     return Align(
@@ -144,22 +209,32 @@ rectangle, line, circle, pipe, equipment, dimension, text.
     );
   }
 
+  /// =========================
+  /// BUILD
+  /// =========================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Civil Engineering Inputs")),
+
       body: Center(
         child: SizedBox(
           width: 700,
           child: Padding(
             padding: const EdgeInsets.all(20),
+
             child: SingleChildScrollView(
               child: Form(
                 key: _formKey,
+
                 child: Column(
                   children: [
+                    /// =========================
                     /// PROJECT
+                    /// =========================
                     sectionTitle("Project Information"),
+
                     TextFormField(
                       controller: projectNameController,
                       decoration: const InputDecoration(
@@ -188,9 +263,11 @@ rectangle, line, circle, pipe, equipment, dimension, text.
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
 
+                    /// =========================
                     /// SITE
+                    /// =========================
                     sectionTitle("Site Details"),
 
                     TextFormField(
@@ -232,107 +309,105 @@ rectangle, line, circle, pipe, equipment, dimension, text.
                       decoration: const InputDecoration(labelText: "Soil Type"),
                     ),
 
-                    const SizedBox(height: 30),
-
+                    /// =========================
                     /// STRUCTURE
-                    sectionTitle("Structure Details"),
+                    /// =========================
+                    if (structureType == "building" ||
+                        structureType == "factory" ||
+                        structureType == "plant") ...[
+                      const SizedBox(height: 30),
 
-                    TextFormField(
-                      controller: floorsController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Number of Floors",
-                      ),
-                    ),
+                      sectionTitle("Structure Details"),
 
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: columnSpacingController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Column Spacing (m)",
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    DropdownButtonFormField(
-                      value: structureSystem,
-                      items: const [
-                        DropdownMenuItem(value: "RCC", child: Text("RCC")),
-                        DropdownMenuItem(value: "Steel", child: Text("Steel")),
-                        DropdownMenuItem(
-                          value: "Composite",
-                          child: Text("Composite"),
+                      TextFormField(
+                        controller: floorsController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Number of Floors",
                         ),
-                      ],
-                      onChanged: (v) => structureSystem = v.toString(),
-                      decoration: const InputDecoration(
-                        labelText: "Structure System",
                       ),
-                    ),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    DropdownButtonFormField(
-                      value: foundationType,
-                      items: const [
-                        DropdownMenuItem(
-                          value: "Isolated Footing",
-                          child: Text("Isolated Footing"),
+                      TextFormField(
+                        controller: columnSpacingController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Column Spacing",
                         ),
-                        DropdownMenuItem(
-                          value: "Raft Foundation",
-                          child: Text("Raft Foundation"),
+                      ),
+                    ],
+
+                    /// =========================
+                    /// ROAD
+                    /// =========================
+                    if (structureType == "road") ...[
+                      const SizedBox(height: 30),
+
+                      sectionTitle("Road Design"),
+
+                      TextFormField(
+                        controller: roadWidthController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Road Width",
                         ),
-                        DropdownMenuItem(
-                          value: "Pile Foundation",
-                          child: Text("Pile Foundation"),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      TextFormField(
+                        controller: drainSlopeController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Drain Slope",
                         ),
-                      ],
-                      onChanged: (v) => foundationType = v.toString(),
-                      decoration: const InputDecoration(
-                        labelText: "Foundation Type",
                       ),
-                    ),
+                    ],
 
-                    const SizedBox(height: 30),
+                    /// =========================
+                    /// INDUSTRIAL
+                    /// =========================
+                    if (structureType == "plant" ||
+                        structureType == "factory") ...[
+                      const SizedBox(height: 30),
 
-                    /// MATERIAL
-                    sectionTitle("Materials"),
+                      sectionTitle("Industrial Equipment"),
 
-                    DropdownButtonFormField(
-                      value: concreteGrade,
-                      items: const [
-                        DropdownMenuItem(value: "M20", child: Text("M20")),
-                        DropdownMenuItem(value: "M25", child: Text("M25")),
-                        DropdownMenuItem(value: "M30", child: Text("M30")),
-                      ],
-                      onChanged: (v) => concreteGrade = v.toString(),
-                      decoration: const InputDecoration(
-                        labelText: "Concrete Grade",
+                      TextFormField(
+                        controller: tanksController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Number of Tanks",
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    DropdownButtonFormField(
-                      value: steelGrade,
-                      items: const [
-                        DropdownMenuItem(value: "Fe415", child: Text("Fe415")),
-                        DropdownMenuItem(value: "Fe500", child: Text("Fe500")),
-                        DropdownMenuItem(value: "Fe550", child: Text("Fe550")),
-                      ],
-                      onChanged: (v) => steelGrade = v.toString(),
-                      decoration: const InputDecoration(
-                        labelText: "Steel Grade",
+                      TextFormField(
+                        controller: pumpsController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Number of Pumps",
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 30),
+                      const SizedBox(height: 16),
 
+                      TextFormField(
+                        controller: pipeDiameterController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Pipe Diameter (mm)",
+                        ),
+                      ),
+                    ],
+
+                    /// =========================
                     /// UTILITIES
+                    /// =========================
+                    const SizedBox(height: 30),
+
                     sectionTitle("Utilities"),
 
                     CheckboxListTile(
@@ -361,58 +436,21 @@ rectangle, line, circle, pipe, equipment, dimension, text.
 
                     const SizedBox(height: 30),
 
-                    /// INDUSTRIAL
-                    sectionTitle("Industrial Equipment"),
-
-                    TextFormField(
-                      controller: tanksController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Number of Tanks",
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: pumpsController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Number of Pumps",
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: pipeDiameterController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Pipe Diameter (mm)",
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
                     /// =========================
                     /// ENGINEER NOTES
                     /// =========================
-                    sectionTitle("Engineer Notes / Special Instructions"),
-
-                    const SizedBox(height: 12),
+                    sectionTitle("Engineer Notes"),
 
                     TextFormField(
                       controller: descriptionController,
                       maxLines: 5,
                       decoration: const InputDecoration(
-                        labelText: "Custom Description (Optional)",
-                        hintText:
-                            "Example:\nProvide parking area in front.\nPlace staircase on west side.\nAdd two water tanks.",
-                        prefixIcon: Icon(Icons.notes),
+                        labelText: "Special Instructions",
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 20),
 
                     SizedBox(
                       width: double.infinity,

@@ -7,9 +7,17 @@ import '../../../data/models/project_model.dart';
 class ProjectDetailScreen extends StatelessWidget {
   const ProjectDetailScreen({super.key});
 
+  int getCrossAxisCount(double width) {
+    if (width > 1200) return 3;
+    if (width > 800) return 2;
+    return 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     final ProjectModel project = Get.arguments;
+
+    final width = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(title: Text(project.name)),
@@ -17,61 +25,177 @@ class ProjectDetailScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(20),
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: GridView(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: getCrossAxisCount(width),
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            childAspectRatio: width < 800 ? 1.4 : 2.2,
+          ),
+
           children: [
-            /// PROJECT NAME
-            Text(
-              project.name,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            /// PROJECT INFORMATION
+            _infoCard(
+              title: "Project Information",
+              children: [
+                _infoRow("Name", project.name),
+                _infoRow("Category", project.projectCategory ?? "-"),
+                _infoRow("Subtype", project.projectSubType ?? "-"),
+                _infoRow("Location", project.location ?? "-"),
+                _infoRow("Budget", project.budget?.toString() ?? "-"),
+              ],
             ),
 
-            const SizedBox(height: 10),
+            /// SITE DETAILS
+            _infoCard(
+              title: "Site Details",
+              children: [
+                _infoRow("Site Area", project.siteArea?.toString() ?? "-"),
+                _infoRow("Length", project.length?.toString() ?? "-"),
+                _infoRow("Width", project.width?.toString() ?? "-"),
+                _infoRow("Elevation", project.elevation?.toString() ?? "-"),
+                _infoRow("Latitude", project.latitude?.toString() ?? "-"),
+                _infoRow("Longitude", project.longitude?.toString() ?? "-"),
+              ],
+            ),
+
+            /// ENGINEERING PARAMETERS
+            _infoCard(
+              title: "Engineering Parameters",
+              children: [
+                _infoRow("Soil Type", project.soilType ?? "-"),
+                _infoRow("Foundation", project.foundationType ?? "-"),
+                _infoRow("Structure", project.structureType ?? "-"),
+                _infoRow("Material Grade", project.materialGrade ?? "-"),
+                _infoRow("Seismic Zone", project.seismicZone ?? "-"),
+                _infoRow("Design Code", project.designCode ?? "-"),
+              ],
+            ),
+
+            /// PROJECT MANAGEMENT
+            _infoCard(
+              title: "Project Management",
+              children: [
+                _infoRow("Contractor", project.contractor ?? "-"),
+                _infoRow("Consultant", project.consultant ?? "-"),
+                _infoRow("Status", project.projectStatus ?? "-"),
+                _infoRow("Stage", project.projectStage ?? "-"),
+              ],
+            ),
+
+            /// TIMELINE
+            _infoCard(
+              title: "Timeline",
+              children: [
+                _infoRow(
+                  "Start Date",
+                  project.startDate?.toLocal().toString().split(" ")[0] ?? "-",
+                ),
+                _infoRow(
+                  "Completion",
+                  project.completionDate?.toLocal().toString().split(" ")[0] ??
+                      "-",
+                ),
+                _infoRow(
+                  "Created",
+                  project.createdAt.toLocal().toString().split(" ")[0],
+                ),
+              ],
+            ),
 
             /// DESCRIPTION
+            _infoCard(
+              title: "Engineer Notes",
+              children: [
+                Text(project.description, style: const TextStyle(fontSize: 14)),
+              ],
+            ),
+
+            /// PROJECT TOOLS
+            _actionCard(project),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// =========================
+  /// INFO CARD
+  /// =========================
+
+  Widget _infoCard({required String title, required List<Widget> children}) {
+    return Card(
+      elevation: 3,
+
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
+          children: [
             Text(
-              project.description,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-
-            const SizedBox(height: 20),
-
-            /// PROJECT SIZE
-            Row(
-              children: [
-                const Icon(Icons.straighten),
-
-                const SizedBox(width: 8),
-
-                Text(
-                  "Size: ${project.length} × ${project.width}",
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            /// CREATED DATE
-            Row(
-              children: [
-                const Icon(Icons.calendar_today),
-
-                const SizedBox(width: 8),
-
-                Text(
-                  "Created: ${project.createdAt.toLocal().toString().split(" ")[0]}",
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
 
             const Divider(),
 
-            const SizedBox(height: 20),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
 
-            /// ACTION BUTTONS
+  /// =========================
+  /// INFO ROW
+  /// =========================
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          Expanded(flex: 3, child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  /// =========================
+  /// ACTION CARD
+  /// =========================
+
+  Widget _actionCard(ProjectModel project) {
+    return Card(
+      elevation: 3,
+
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
+          children: [
+            const Text(
+              "Project Tools",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+
+            const Divider(),
+
+            const SizedBox(height: 10),
+
             _actionButton(
               title: "Calculations",
               icon: Icons.calculate,
@@ -80,7 +204,7 @@ class ProjectDetailScreen extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             _actionButton(
               title: "Field Tools",
@@ -90,7 +214,7 @@ class ProjectDetailScreen extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             _actionButton(
               title: "Reports",

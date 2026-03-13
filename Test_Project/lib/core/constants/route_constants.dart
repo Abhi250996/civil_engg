@@ -14,6 +14,7 @@ class RouteConstants {
   /// =========================
 
   static const String dashboard = "/dashboard";
+  static const String levelTool = "/level-tool";
 
   /// =========================
   /// PROJECT ROUTES

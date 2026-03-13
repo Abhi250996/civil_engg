@@ -15,6 +15,8 @@ class ProjectController extends GetxController {
 
   final RxList<ProjectModel> projects = <ProjectModel>[].obs;
 
+  final RxList<ProjectModel> filteredProjects = <ProjectModel>[].obs;
+
   /// =========================
   /// LOAD PROJECTS
   /// =========================
@@ -23,14 +25,44 @@ class ProjectController extends GetxController {
     try {
       isLoading.value = true;
 
-      List<ProjectModel> result = await _repository.getProjects();
+      final result = await _repository.getProjects();
 
       projects.assignAll(result);
+      filteredProjects.assignAll(result);
     } catch (e) {
       Get.snackbar("Error", "Failed to load projects");
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// =========================
+  /// REFRESH PROJECTS
+  /// =========================
+
+  Future<void> refreshProjects() async {
+    await loadProjects();
+  }
+
+  /// =========================
+  /// SEARCH PROJECTS
+  /// =========================
+
+  void searchProjects(String query) {
+    if (query.isEmpty) {
+      filteredProjects.assignAll(projects);
+      return;
+    }
+
+    filteredProjects.assignAll(
+      projects.where(
+        (p) =>
+            p.name.toLowerCase().contains(query.toLowerCase()) ||
+            (p.projectCategory ?? "").toLowerCase().contains(
+              query.toLowerCase(),
+            ),
+      ),
+    );
   }
 
   /// =========================
@@ -40,20 +72,78 @@ class ProjectController extends GetxController {
   Future<void> createProject({
     required String name,
     required String description,
-    required double length,
-    required double width,
+
+    /// PROJECT CLASSIFICATION
+    String? projectCategory,
+    String? projectSubType,
+
+    /// SITE INFORMATION
+    double? siteArea,
+    double? length,
+    double? width,
+    double? elevation,
+
+    String? location,
+    double? latitude,
+    double? longitude,
+
+    /// ENGINEERING PARAMETERS
+    String? soilType,
+    String? foundationType,
+    String? structureType,
+    String? materialGrade,
+    String? seismicZone,
+    String? designCode,
+
+    /// MANAGEMENT
+    double? budget,
+    String? contractor,
+    String? consultant,
+    String? projectStatus,
+    String? projectStage,
+
+    /// TIMELINE
+    DateTime? startDate,
+    DateTime? completionDate,
   }) async {
     try {
       isLoading.value = true;
 
-      ProjectModel project = await _repository.createProject(
+      final project = await _repository.createProject(
         name: name,
         description: description,
+
+        projectCategory: projectCategory,
+        projectSubType: projectSubType,
+
+        siteArea: siteArea,
         length: length,
         width: width,
+        elevation: elevation,
+
+        location: location,
+        latitude: latitude,
+        longitude: longitude,
+
+        soilType: soilType,
+        foundationType: foundationType,
+        structureType: structureType,
+        materialGrade: materialGrade,
+        seismicZone: seismicZone,
+        designCode: designCode,
+
+        budget: budget,
+        contractor: contractor,
+        consultant: consultant,
+        projectStatus: projectStatus,
+        projectStage: projectStage,
+
+        startDate: startDate,
+        completionDate: completionDate,
       );
 
       projects.add(project);
+      filteredProjects.add(project);
 
       Get.back();
 
@@ -73,7 +163,8 @@ class ProjectController extends GetxController {
     try {
       await _repository.deleteProject(projectId);
 
-      projects.removeWhere((project) => project.id == projectId);
+      projects.removeWhere((p) => p.id == projectId);
+      filteredProjects.removeWhere((p) => p.id == projectId);
 
       Get.snackbar("Success", "Project deleted");
     } catch (e) {

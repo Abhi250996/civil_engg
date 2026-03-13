@@ -1,10 +1,20 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/route_constants.dart';
 
 class FieldToolsController extends GetxController {
+  final RxDouble levelX = 0.0.obs;
+  final RxDouble levelY = 0.0.obs;
+
+  StreamSubscription? sensorSub;
+
   /// =========================
-  /// OPEN MEASUREMENT TOOL
+  /// MEASUREMENT TOOL
   /// =========================
 
   void openMeasurement() {
@@ -12,26 +22,48 @@ class FieldToolsController extends GetxController {
   }
 
   /// =========================
-  /// OPEN LEVEL TOOL
+  /// LEVEL TOOL
   /// =========================
 
   void openLevelTool() {
-    Get.snackbar("Level Tool", "Level measurement feature coming soon");
+    Get.toNamed(RouteConstants.levelTool);
+
+    sensorSub = accelerometerEvents.listen((event) {
+      levelX.value = event.x;
+      levelY.value = event.y;
+    });
   }
 
   /// =========================
-  /// OPEN GPS TOOL
+  /// GPS TOOL
   /// =========================
 
-  void openGpsTool() {
-    Get.snackbar("GPS Mapping", "GPS mapping feature coming soon");
+  Future<void> openGpsTool() async {
+    Position position = await Geolocator.getCurrentPosition();
+
+    Get.snackbar(
+      "GPS Location",
+      "Lat: ${position.latitude}, Lng: ${position.longitude}",
+    );
   }
 
   /// =========================
-  /// OPEN CAMERA
+  /// CAMERA
   /// =========================
 
-  void openCamera() {
-    Get.snackbar("Camera", "Site photo capture feature coming soon");
+  Future<void> openCamera() async {
+    final picker = ImagePicker();
+
+    final image = await picker.pickImage(source: ImageSource.camera);
+
+    if (image != null) {
+      Get.snackbar("Photo Captured", image.path);
+    }
+  }
+
+  @override
+  void onClose() {
+    sensorSub?.cancel();
+    super.onClose();
   }
 }

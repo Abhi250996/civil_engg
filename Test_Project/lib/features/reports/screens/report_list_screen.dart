@@ -6,58 +6,111 @@ import '../../../data/models/report_model.dart';
 import '../controllers/report_controller.dart';
 import '../widgets/report_card.dart';
 
-class ReportListScreen extends StatelessWidget {
+class ReportListScreen extends StatefulWidget {
   const ReportListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final ReportController controller = Get.find();
+  State<ReportListScreen> createState() => _ReportListScreenState();
+}
 
+class _ReportListScreenState extends State<ReportListScreen> {
+  final ReportController controller = Get.find();
+
+  @override
+  void initState() {
+    super.initState();
     controller.loadReports();
+  }
+
+  int getCrossAxisCount(double width) {
+    if (width > 1400) return 4;
+    if (width > 1000) return 3;
+    if (width > 700) return 2;
+    return 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Reports")),
 
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Get.toNamed(RouteConstants.createReport);
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text("New Report"),
       ),
 
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      body: Padding(
+        padding: const EdgeInsets.all(16),
 
-        if (controller.reports.isEmpty) {
-          return const Center(child: Text("No reports available"));
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-
-          itemCount: controller.reports.length,
-
-          itemBuilder: (context, index) {
-            ReportModel report = controller.reports[index];
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-
-              child: ReportCard(
-                report: report,
-                onOpen: () {
-                  controller.openReport(report);
-                },
-                onDelete: () {
-                  controller.deleteReport(report.id);
-                },
+        child: Column(
+          children: [
+            /// SEARCH
+            TextField(
+              decoration: const InputDecoration(
+                hintText: "Search reports...",
+                prefixIcon: Icon(Icons.search),
               ),
-            );
-          },
-        );
-      }),
+              onChanged: controller.searchReports,
+            ),
+
+            const SizedBox(height: 16),
+
+            /// LIST
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (controller.filteredReports.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "No reports available",
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: controller.loadReports,
+
+                  child: GridView.builder(
+                    itemCount: controller.filteredReports.length,
+
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: getCrossAxisCount(width),
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1.4,
+                    ),
+
+                    itemBuilder: (context, index) {
+                      ReportModel report = controller.filteredReports[index];
+
+                      return ReportCard(
+                        report: report,
+
+                        onOpen: () {
+                          controller.openReport(report);
+                        },
+
+                        onDelete: () {
+                          controller.deleteReport(report.id);
+                        },
+                      );
+                    },
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -9,24 +9,6 @@ class AiService {
   /// AI CHAT
   /// =========================
 
-  static Future<String> sendChatMessage({required String message}) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/chat"),
-
-      headers: {"Content-Type": "application/json"},
-
-      body: jsonEncode({"message": message}),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("AI Server Error: ${response.body}");
-    }
-
-    final data = jsonDecode(response.body);
-
-    return data["reply"] ?? "";
-  }
-
   /// =========================
   /// AI DRAWING GENERATION
   /// =========================

@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:test_project/bindings/field_tools_binding.dart';
 
 import '../routes/app_routes.dart';
 
@@ -6,7 +7,6 @@ import '../bindings/auth_binding.dart';
 import '../bindings/dashboard_binding.dart';
 import '../bindings/project_binding.dart';
 import '../bindings/calculation_binding.dart';
-import '../bindings/ai_binding.dart';
 import '../bindings/report_binding.dart';
 
 import '../features/auth/screens/splash_screen.dart';
@@ -25,8 +25,6 @@ import '../features/calculations/screens/drawing_result_screen.dart';
 
 import '../features/field_tools/screens/field_tools_screen.dart';
 import '../features/field_tools/screens/measurement_screen.dart';
-
-import '../features/ai_assistant/screens/ai_chat_screen.dart';
 
 import '../features/reports/screens/report_list_screen.dart';
 import '../features/reports/screens/create_report_screen.dart';
@@ -87,7 +85,7 @@ class AppPages {
 
     GetPage(
       name: AppRoutes.houseInput,
-      page: () => const HouseInputScreen(),
+      page: () => const StructureInputScreen(),
       binding: CalculationBinding(),
     ),
 
@@ -98,16 +96,15 @@ class AppPages {
     ),
 
     /// FIELD TOOLS
-    GetPage(name: AppRoutes.fieldTools, page: () => const FieldToolsScreen()),
+    GetPage(
+      name: AppRoutes.fieldTools,
+      page: () => const FieldToolsScreen(),
+      binding: FieldToolsBinding(),
+    ),
 
     GetPage(name: AppRoutes.measurement, page: () => const MeasurementScreen()),
 
     /// AI ASSISTANT
-    GetPage(
-      name: AppRoutes.aiChat,
-      page: () => const AiChatScreen(),
-      binding: AiBinding(),
-    ),
 
     /// REPORTS
     GetPage(

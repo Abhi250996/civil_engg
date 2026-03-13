@@ -8,18 +8,33 @@ class ProjectRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /// =========================
-  /// GET ALL PROJECTS
+  /// GET USER ID
+  /// =========================
+
+  String _getUid() {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    return user.uid;
+  }
+
+  /// =========================
+  /// PROJECT COLLECTION
+  /// =========================
+
+  CollectionReference<Map<String, dynamic>> _projectRef() {
+    return _firestore.collection("users").doc(_getUid()).collection("projects");
+  }
+
+  /// =========================
+  /// GET PROJECTS
   /// =========================
 
   Future<List<ProjectModel>> getProjects() async {
-    final user = _auth.currentUser;
-
-    if (user == null) return [];
-
-    final snapshot = await _firestore
-        .collection("users")
-        .doc(user.uid)
-        .collection("projects")
+    final snapshot = await _projectRef()
         .orderBy("createdAt", descending: true)
         .get();
 
@@ -29,32 +44,95 @@ class ProjectRepository {
   }
 
   /// =========================
+  /// REALTIME PROJECT STREAM
+  /// =========================
+
+  Stream<List<ProjectModel>> streamProjects() {
+    return _projectRef()
+        .orderBy("createdAt", descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map(
+                (doc) => ProjectModel.fromJson({...doc.data(), "id": doc.id}),
+              )
+              .toList(),
+        );
+  }
+
+  /// =========================
   /// CREATE PROJECT
   /// =========================
 
   Future<ProjectModel> createProject({
     required String name,
     required String description,
-    required double length,
-    required double width,
+
+    String? projectCategory,
+    String? projectSubType,
+
+    double? siteArea,
+    double? length,
+    double? width,
+    double? elevation,
+
+    String? location,
+    double? latitude,
+    double? longitude,
+
+    String? soilType,
+    String? foundationType,
+    String? structureType,
+    String? materialGrade,
+    String? seismicZone,
+    String? designCode,
+
+    double? budget,
+    String? contractor,
+    String? consultant,
+    String? projectStatus,
+    String? projectStage,
+
+    DateTime? startDate,
+    DateTime? completionDate,
   }) async {
-    final user = _auth.currentUser;
+    final data = {
+      "name": name,
+      "description": description,
 
-    if (user == null) {
-      throw Exception("User not logged in");
-    }
+      "projectCategory": projectCategory,
+      "projectSubType": projectSubType,
 
-    final docRef = await _firestore
-        .collection("users")
-        .doc(user.uid)
-        .collection("projects")
-        .add({
-          "name": name,
-          "description": description,
-          "length": length,
-          "width": width,
-          "createdAt": FieldValue.serverTimestamp(),
-        });
+      "siteArea": siteArea,
+      "length": length,
+      "width": width,
+      "elevation": elevation,
+
+      "location": location,
+      "latitude": latitude,
+      "longitude": longitude,
+
+      "soilType": soilType,
+      "foundationType": foundationType,
+      "structureType": structureType,
+      "materialGrade": materialGrade,
+      "seismicZone": seismicZone,
+      "designCode": designCode,
+
+      "budget": budget,
+      "contractor": contractor,
+      "consultant": consultant,
+      "projectStatus": projectStatus,
+      "projectStage": projectStage,
+
+      "startDate": startDate,
+      "completionDate": completionDate,
+
+      "createdAt": FieldValue.serverTimestamp(),
+      "updatedAt": FieldValue.serverTimestamp(),
+    };
+
+    final docRef = await _projectRef().add(data);
 
     final doc = await docRef.get();
 
@@ -69,19 +147,9 @@ class ProjectRepository {
     required String projectId,
     required Map<String, dynamic> data,
   }) async {
-    final user = _auth.currentUser;
+    final ref = _projectRef().doc(projectId);
 
-    if (user == null) {
-      throw Exception("User not logged in");
-    }
-
-    final ref = _firestore
-        .collection("users")
-        .doc(user.uid)
-        .collection("projects")
-        .doc(projectId);
-
-    await ref.update(data);
+    await ref.update({...data, "updatedAt": FieldValue.serverTimestamp()});
 
     final doc = await ref.get();
 
@@ -93,15 +161,6 @@ class ProjectRepository {
   /// =========================
 
   Future<void> deleteProject(String projectId) async {
-    final user = _auth.currentUser;
-
-    if (user == null) return;
-
-    await _firestore
-        .collection("users")
-        .doc(user.uid)
-        .collection("projects")
-        .doc(projectId)
-        .delete();
+    await _projectRef().doc(projectId).delete();
   }
 }
