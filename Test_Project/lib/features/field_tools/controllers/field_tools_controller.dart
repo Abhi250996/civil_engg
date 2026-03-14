@@ -11,63 +11,93 @@ import '../../../core/constants/route_constants.dart';
 
 class FieldToolsController extends GetxController {
   /// ======================================================
-  /// TEXT CONTROLLERS (SITE DIARY)
+  /// SITE DIARY TEXT CONTROLLERS
   /// ======================================================
 
-  final TextEditingController projectController = TextEditingController();
-  final TextEditingController engineerController = TextEditingController();
-  final TextEditingController labourController = TextEditingController();
-  final TextEditingController workController = TextEditingController();
-  final TextEditingController issuesController = TextEditingController();
-  final TextEditingController notesController = TextEditingController();
+  final projectController = TextEditingController();
+  final engineerController = TextEditingController();
+  final labourController = TextEditingController();
+  final workController = TextEditingController();
+  final issuesController = TextEditingController();
+  final notesController = TextEditingController();
 
   /// ======================================================
-  /// DIARY STORAGE
+  /// DIARY STORAGE (LOCAL MEMORY)
   /// ======================================================
 
   final RxList<Map<String, dynamic>> diaryEntries =
       <Map<String, dynamic>>[].obs;
 
   /// ======================================================
-  /// LEVEL TOOL
+  /// LEVEL TOOL STATE
   /// ======================================================
 
   final RxDouble levelX = 0.0.obs;
   final RxDouble levelY = 0.0.obs;
+
   final RxBool showLaser = false.obs;
+  final RxBool holdMode = false.obs;
+
+  double calibrationX = 0;
+  double calibrationY = 0;
 
   StreamSubscription<AccelerometerEvent>? sensorSub;
 
-  void openMeasurement() {
-    Get.toNamed(RouteConstants.measurement);
-  }
-
-  void openLevelTool() {
-    Get.toNamed(RouteConstants.levelTool);
-
+  /// START SENSOR
+  void startLevelSensor() {
     sensorSub?.cancel();
 
     sensorSub = accelerometerEvents.listen((event) {
-      levelX.value = event.x;
-      levelY.value = event.y;
+      if (holdMode.value) return;
+
+      levelX.value = event.x - calibrationX;
+      levelY.value = event.y - calibrationY;
     });
   }
 
-  void stopLevelTool() {
+  /// STOP SENSOR
+  void stopLevelSensor() {
     sensorSub?.cancel();
   }
 
+  /// OPEN LEVEL TOOL
+  void openLevelTool() {
+    Get.toNamed(RouteConstants.levelTool);
+  }
+
+  /// RESET CALIBRATION
+  void resetCalibration() {
+    calibrationX = levelX.value;
+    calibrationY = levelY.value;
+
+    Get.snackbar(
+      "Calibration",
+      "Current surface set as level reference",
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  /// HOLD MEASUREMENT
+  void holdMeasurement() {
+    holdMode.value = !holdMode.value;
+
+    Get.snackbar(
+      "Hold Mode",
+      holdMode.value ? "Measurement Locked" : "Measurement Released",
+    );
+  }
+
+  /// LASER LINE
   void toggleLaser() {
     showLaser.value = !showLaser.value;
   }
 
-  void resetCalibration() {
-    levelX.value = 0;
-    levelY.value = 0;
-  }
+  /// ======================================================
+  /// MEASUREMENT TOOL NAVIGATION
+  /// ======================================================
 
-  void holdMeasurement() {
-    Get.snackbar("Measurement", "Angle locked");
+  void openMeasurement() {
+    Get.toNamed(RouteConstants.measurement);
   }
 
   /// ======================================================
@@ -76,10 +106,10 @@ class FieldToolsController extends GetxController {
 
   Future<void> openGpsTool() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      bool enabled = await Geolocator.isLocationServiceEnabled();
 
-      if (!serviceEnabled) {
-        Get.snackbar("Location Disabled", "Enable GPS services");
+      if (!enabled) {
+        Get.snackbar("GPS Disabled", "Please enable GPS services");
         return;
       }
 
@@ -97,13 +127,13 @@ class FieldToolsController extends GetxController {
         return;
       }
 
-      Position position = await Geolocator.getCurrentPosition(
+      Position pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
       Get.snackbar(
-        "Site Coordinates",
-        "Lat: ${position.latitude.toStringAsFixed(6)}\nLng: ${position.longitude.toStringAsFixed(6)}",
+        "Coordinates",
+        "Lat: ${pos.latitude.toStringAsFixed(6)}\nLng: ${pos.longitude.toStringAsFixed(6)}",
       );
     } catch (e) {
       Get.snackbar("GPS Error", e.toString());
@@ -120,15 +150,15 @@ class FieldToolsController extends GetxController {
     try {
       final picker = ImagePicker();
 
-      final image = await picker.pickImage(
+      final photo = await picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 80,
       );
 
-      if (image != null) {
-        capturedImage.value = File(image.path);
+      if (photo != null) {
+        capturedImage.value = File(photo.path);
 
-        Get.snackbar("Photo Captured", "Photo saved successfully");
+        Get.snackbar("Photo Captured", "Image saved successfully");
       }
     } catch (e) {
       Get.snackbar("Camera Error", e.toString());
@@ -144,9 +174,9 @@ class FieldToolsController extends GetxController {
 
   Future<void> captureLocation() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      bool enabled = await Geolocator.isLocationServiceEnabled();
 
-      if (!serviceEnabled) {
+      if (!enabled) {
         Get.snackbar("GPS Disabled", "Enable location services");
         return;
       }
@@ -155,10 +185,10 @@ class FieldToolsController extends GetxController {
 
       if (permission == LocationPermission.denied) return;
 
-      Position position = await Geolocator.getCurrentPosition();
+      Position pos = await Geolocator.getCurrentPosition();
 
       location.value =
-          "Lat: ${position.latitude.toStringAsFixed(5)}, Lng: ${position.longitude.toStringAsFixed(5)}";
+          "Lat: ${pos.latitude.toStringAsFixed(5)}, Lng: ${pos.longitude.toStringAsFixed(5)}";
     } catch (e) {
       Get.snackbar("Location Error", e.toString());
     }
@@ -184,19 +214,19 @@ class FieldToolsController extends GetxController {
 
     diaryEntries.add(entry);
 
-    Get.snackbar("Saved", "Site diary entry saved");
+    Get.snackbar("Saved", "Site diary entry saved successfully");
 
     clearDiaryForm();
   }
 
   /// ======================================================
-  /// DELETE ENTRY
+  /// DELETE DIARY ENTRY
   /// ======================================================
 
   void deleteEntry(int index) {
     diaryEntries.removeAt(index);
 
-    Get.snackbar("Deleted", "Diary entry removed");
+    Get.snackbar("Deleted", "Entry removed");
   }
 
   /// ======================================================
@@ -221,29 +251,17 @@ class FieldToolsController extends GetxController {
   /// NAVIGATION
   /// ======================================================
 
-  void openUnitConverter() {
-    Get.toNamed(RouteConstants.unitConverter);
-  }
+  void openUnitConverter() => Get.toNamed(RouteConstants.unitConverter);
 
-  void openConcreteCalc() {
-    Get.toNamed(RouteConstants.concreteCalc);
-  }
+  void openConcreteCalc() => Get.toNamed(RouteConstants.concreteCalc);
 
-  void openSteelCalc() {
-    Get.toNamed(RouteConstants.steelCalc);
-  }
+  void openSteelCalc() => Get.toNamed(RouteConstants.steelCalc);
 
-  void openSiteDiary() {
-    Get.toNamed(RouteConstants.siteDiary);
-  }
+  void openSiteDiary() => Get.toNamed(RouteConstants.siteDiary);
 
-  void openCadViewer() {
-    Get.toNamed(RouteConstants.cadViewer);
-  }
+  void openCadViewer() => Get.toNamed(RouteConstants.cadViewer);
 
-  void openSunSeeker() {
-    Get.toNamed(RouteConstants.sunPath);
-  }
+  void openSunSeeker() => Get.toNamed(RouteConstants.sunPath);
 
   /// ======================================================
   /// CLEANUP

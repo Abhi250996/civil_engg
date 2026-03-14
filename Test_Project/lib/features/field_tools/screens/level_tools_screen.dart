@@ -2,20 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/field_tools_controller.dart';
 
-class LevelToolScreen extends StatelessWidget {
+class LevelToolScreen extends StatefulWidget {
   const LevelToolScreen({super.key});
+
+  @override
+  State<LevelToolScreen> createState() => _LevelToolScreenState();
+}
+
+class _LevelToolScreenState extends State<LevelToolScreen> {
+  final controller = Get.find<FieldToolsController>();
 
   static const Color primaryBlue = Color(0xFF1E3A8A);
   static const Color accentBlue = Color(0xFF3B82F6);
   static const Color bgColor = Color(0xFFF8FAFC);
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<FieldToolsController>();
+  void initState() {
+    super.initState();
 
+    /// START SENSOR
+    controller.startLevelSensor();
+  }
+
+  @override
+  void dispose() {
+    /// STOP SENSOR
+    controller.stopLevelSensor();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(title: const Text("Digital Level Tool")),
+
       body: Obx(() {
         double x = controller.levelX.value;
         double y = controller.levelY.value;
@@ -40,13 +62,12 @@ class LevelToolScreen extends StatelessWidget {
               ),
             ),
 
-            /// MAIN BUBBLE LEVEL
+            /// LEVEL VIEW
             Expanded(
               child: Center(
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    /// OUTER CIRCLE
                     Container(
                       width: 260,
                       height: 260,
@@ -56,25 +77,21 @@ class LevelToolScreen extends StatelessWidget {
                       ),
                     ),
 
-                    /// HORIZONTAL LINE
                     Container(
                       width: 260,
                       height: 2,
                       color: Colors.grey.shade300,
                     ),
 
-                    /// VERTICAL LINE
                     Container(
                       width: 2,
                       height: 260,
                       color: Colors.grey.shade300,
                     ),
 
-                    /// LASER REFERENCE LINE
                     if (controller.showLaser.value)
                       Container(width: 260, height: 3, color: Colors.red),
 
-                    /// BUBBLE
                     AnimatedAlign(
                       duration: const Duration(milliseconds: 100),
                       alignment: Alignment(xPos, yPos),
@@ -92,7 +109,7 @@ class LevelToolScreen extends StatelessWidget {
               ),
             ),
 
-            /// DIGITAL READOUT
+            /// DIGITAL VALUES
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -119,7 +136,7 @@ class LevelToolScreen extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: controller.toggleLaser,
                     icon: const Icon(Icons.horizontal_rule),
-                    label: const Text("Laser Line"),
+                    label: const Text("Laser"),
                   ),
 
                   ElevatedButton.icon(
