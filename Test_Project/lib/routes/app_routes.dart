@@ -21,4 +21,18 @@ class AppRoutes {
 
   static const reports = "/reports";
   static const createReport = "/create-report";
+
+  /// Measurement
+  static const String levelTool = "/level-tool";
+  static const String gpsTool = "/gps-tool";
+
+  /// Calculators
+  static const String unitConverter = "/unit-converter";
+  static const String concreteCalc = "/concrete-calculator";
+  static const String steelCalc = "/steel-calculator";
+
+  /// Documentation
+  static const String siteDiary = "/site-diary";
+  static const String cadViewer = "/cad-viewer";
+  static const String sunPath = "/sun-path";
 }

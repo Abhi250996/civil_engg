@@ -17,7 +17,12 @@ class FieldToolsScreen extends StatelessWidget {
     final bool isDesktop = width > 900;
     final bool isTablet = width > 600 && width <= 900;
 
+    int crossAxisCount = 2;
+    if (isTablet) crossAxisCount = 3;
+    if (isDesktop) crossAxisCount = 6;
+
     final tools = [
+      /// ---------------- MEASUREMENT ----------------
       ToolCard(
         title: "Measure",
         subtitle: "Distance",
@@ -37,12 +42,6 @@ class FieldToolsScreen extends StatelessWidget {
         onTap: controller.openGpsTool,
       ),
       ToolCard(
-        title: "Photos",
-        subtitle: "Site Media",
-        icon: Icons.camera_enhance_rounded,
-        onTap: controller.openCamera,
-      ),
-      ToolCard(
         title: "Area",
         subtitle: "Plot Size",
         icon: Icons.square_foot_rounded,
@@ -56,13 +55,53 @@ class FieldToolsScreen extends StatelessWidget {
         isLocked: true,
         onTap: () {},
       ),
+
+      /// ---------------- CALCULATORS ----------------
+      ToolCard(
+        title: "Converter",
+        subtitle: "Unit Scaling",
+        icon: Icons.sync_alt_rounded,
+        onTap: controller.openUnitConverter,
+      ),
+      ToolCard(
+        title: "Concrete",
+        subtitle: "Volume Calc",
+        icon: Icons.layers_rounded,
+        onTap: controller.openConcreteCalc,
+      ),
+      ToolCard(
+        title: "Steel",
+        subtitle: "Weight Calc",
+        icon: Icons.reorder_rounded,
+        onTap: controller.openSteelCalc,
+      ),
+
+      /// ---------------- DOCUMENTATION ----------------
+      ToolCard(
+        title: "Photos",
+        subtitle: "Site Media",
+        icon: Icons.camera_enhance_rounded,
+        onTap: controller.openCamera,
+      ),
+      ToolCard(
+        title: "Site Diary",
+        subtitle: "Daily Log",
+        icon: Icons.edit_note_rounded,
+        onTap: controller.openSiteDiary,
+      ),
+      ToolCard(
+        title: "CAD View",
+        subtitle: "DWG/DXF",
+        icon: Icons.view_in_ar_rounded,
+        onTap: controller.openCadViewer,
+      ),
+      ToolCard(
+        title: "Sun Path",
+        subtitle: "Orientation",
+        icon: Icons.wb_sunny_rounded,
+        onTap: controller.openSunSeeker,
+      ),
     ];
-
-    int crossAxisCount = 2;
-
-    if (isTablet) {
-      crossAxisCount = 3;
-    }
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -87,22 +126,15 @@ class FieldToolsScreen extends StatelessWidget {
             _buildHeader(),
             const SizedBox(height: 30),
 
-            /// Desktop → Horizontal Toolbar
+            /// Desktop → horizontal toolbar
             if (isDesktop)
               SizedBox(
-                height: 90,
-                child: SingleChildScrollView(
+                height: 110,
+                child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: tools
-                        .map(
-                          (tool) => Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: tool,
-                          ),
-                        )
-                        .toList(),
-                  ),
+                  itemCount: tools.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) => tools[index],
                 ),
               )
             /// Mobile + Tablet → Grid
@@ -112,8 +144,8 @@ class FieldToolsScreen extends StatelessWidget {
                   itemCount: tools.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 18,
+                    crossAxisSpacing: 18,
                     childAspectRatio: 1,
                   ),
                   itemBuilder: (context, index) {

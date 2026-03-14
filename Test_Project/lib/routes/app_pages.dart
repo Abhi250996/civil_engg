@@ -1,5 +1,15 @@
 import 'package:get/get.dart';
 import 'package:test_project/bindings/field_tools_binding.dart';
+import 'package:test_project/features/ai_assistant/screens/ai_civil_screen.dart';
+import 'package:test_project/features/field_tools/screens/cad_viewer_screen.dart';
+import 'package:test_project/features/field_tools/screens/concrete_calc_screen.dart';
+import 'package:test_project/features/field_tools/screens/gps_tool_screen.dart';
+import 'package:test_project/features/field_tools/screens/level_tools_screen.dart';
+import 'package:test_project/features/field_tools/screens/site_diary_screen.dart';
+import 'package:test_project/features/field_tools/screens/steel_calc_screen.dart';
+import 'package:test_project/features/field_tools/screens/sun_path_screen.dart';
+import 'package:test_project/features/field_tools/screens/unit_converter_screen.dart';
+import 'package:test_project/features/reports/screens/create_report_screen.dart';
 
 import '../routes/app_routes.dart';
 
@@ -27,7 +37,6 @@ import '../features/field_tools/screens/field_tools_screen.dart';
 import '../features/field_tools/screens/measurement_screen.dart';
 
 import '../features/reports/screens/report_list_screen.dart';
-import '../features/reports/screens/create_report_screen.dart';
 
 class AppPages {
   static final routes = [
@@ -118,5 +127,31 @@ class AppPages {
       page: () => const CreateReportScreen(),
       binding: ReportBinding(),
     ),
+    GetPage(name: AppRoutes.fieldTools, page: () => const FieldToolsScreen()),
+
+    GetPage(name: AppRoutes.measurement, page: () => const MeasurementScreen()),
+
+    GetPage(name: AppRoutes.levelTool, page: () => const LevelToolScreen()),
+
+    GetPage(name: AppRoutes.gpsTool, page: () => const GpsToolScreen()),
+
+    GetPage(
+      name: AppRoutes.unitConverter,
+      page: () => const UnitConverterScreen(),
+    ),
+
+    GetPage(
+      name: AppRoutes.concreteCalc,
+      page: () => const ConcreteCalcScreen(),
+    ),
+
+    GetPage(name: AppRoutes.steelCalc, page: () => const SteelCalcScreen()),
+
+    GetPage(name: AppRoutes.siteDiary, page: () => const SiteDiaryScreen()),
+
+    GetPage(name: AppRoutes.cadViewer, page: () => const CadViewerScreen()),
+
+    GetPage(name: AppRoutes.sunPath, page: () => const SunPathScreen()),
+    GetPage(name: AppRoutes.aiChat, page: () => const AiCivilScreen()),
   ];
 }

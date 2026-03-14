@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/calculation_utils.dart';
 import '../../../core/utils/validators.dart';
 
 class MeasurementScreen extends StatefulWidget {
@@ -12,210 +11,265 @@ class MeasurementScreen extends StatefulWidget {
 class _MeasurementScreenState extends State<MeasurementScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  // Theme Tokens
-  static const Color primaryBlue = Color(0xFF1E3A8A); // Deep Blue
-  static const Color accentBlue = Color(0xFF3B82F6);  // Sky Blue
-  static const Color bgColor = Color(0xFFF8FAFC);     // Soft White
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color bgColor = Color(0xFFF8FAFC);
 
-  final TextEditingController x1Controller = TextEditingController();
-  final TextEditingController y1Controller = TextEditingController();
-  final TextEditingController x2Controller = TextEditingController();
-  final TextEditingController y2Controller = TextEditingController();
+  String measurementType = "Coordinate Distance";
 
-  double? distance;
+  final TextEditingController x1 = TextEditingController();
+  final TextEditingController y1 = TextEditingController();
+  final TextEditingController x2 = TextEditingController();
+  final TextEditingController y2 = TextEditingController();
 
-  void calculateDistance() {
+  final TextEditingController length = TextEditingController();
+  final TextEditingController width = TextEditingController();
+  final TextEditingController height = TextEditingController();
+
+  final TextEditingController sideA = TextEditingController();
+  final TextEditingController sideB = TextEditingController();
+  final TextEditingController sideC = TextEditingController();
+
+  final TextEditingController rise = TextEditingController();
+  final TextEditingController run = TextEditingController();
+
+  double? result;
+
+  void calculate() {
     if (!_formKey.currentState!.validate()) return;
 
-    double x1 = double.parse(x1Controller.text);
-    double y1 = double.parse(y1Controller.text);
-    double x2 = double.parse(x2Controller.text);
-    double y2 = double.parse(y2Controller.text);
+    switch (measurementType) {
+      case "Coordinate Distance":
+        double dx = double.parse(x2.text) - double.parse(x1.text);
+        double dy = double.parse(y2.text) - double.parse(y1.text);
+        result = (dx * dx + dy * dy).sqrt();
+        break;
 
-    setState(() {
-      distance = CalculationUtils.distanceBetweenPoints(
-        x1: x1, y1: y1, x2: x2, y2: y2,
-      );
-    });
+      case "Length":
+        result = double.parse(length.text);
+        break;
+
+      case "Area":
+        result = double.parse(length.text) * double.parse(width.text);
+        break;
+
+      case "Triangle Area":
+        double a = double.parse(sideA.text);
+        double b = double.parse(sideB.text);
+        double c = double.parse(sideC.text);
+        double s = (a + b + c) / 2;
+        result = (s * (s - a) * (s - b) * (s - c)).sqrt();
+        break;
+
+      case "Perimeter":
+        result =
+            double.parse(sideA.text) +
+            double.parse(sideB.text) +
+            double.parse(sideC.text);
+        break;
+
+      case "Slope":
+        double r = double.parse(rise.text);
+        double rn = double.parse(run.text);
+        result = (r / rn) * 100;
+        break;
+
+      case "Volume":
+        result =
+            double.parse(length.text) *
+            double.parse(width.text) *
+            double.parse(height.text);
+        break;
+    }
+
+    setState(() {});
+  }
+
+  Widget field(TextEditingController c, String label) {
+    return TextFormField(
+      controller: c,
+      keyboardType: TextInputType.number,
+      validator: (v) => Validators.validateRequired(v, label),
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget buildInputs() {
+    switch (measurementType) {
+      case "Coordinate Distance":
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: field(x1, "X1")),
+                const SizedBox(width: 10),
+                Expanded(child: field(y1, "Y1")),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: field(x2, "X2")),
+                const SizedBox(width: 10),
+                Expanded(child: field(y2, "Y2")),
+              ],
+            ),
+          ],
+        );
+
+      case "Length":
+        return field(length, "Length");
+
+      case "Area":
+        return Column(
+          children: [
+            field(length, "Length"),
+            const SizedBox(height: 10),
+            field(width, "Width"),
+          ],
+        );
+
+      case "Triangle Area":
+        return Column(
+          children: [
+            field(sideA, "Side A"),
+            const SizedBox(height: 10),
+            field(sideB, "Side B"),
+            const SizedBox(height: 10),
+            field(sideC, "Side C"),
+          ],
+        );
+
+      case "Perimeter":
+        return Column(
+          children: [
+            field(sideA, "Side A"),
+            const SizedBox(height: 10),
+            field(sideB, "Side B"),
+            const SizedBox(height: 10),
+            field(sideC, "Side C"),
+          ],
+        );
+
+      case "Slope":
+        return Column(
+          children: [
+            field(rise, "Rise"),
+            const SizedBox(height: 10),
+            field(run, "Run"),
+          ],
+        );
+
+      case "Volume":
+        return Column(
+          children: [
+            field(length, "Length"),
+            const SizedBox(height: 10),
+            field(width, "Width"),
+            const SizedBox(height: 10),
+            field(height, "Height"),
+          ],
+        );
+
+      default:
+        return const SizedBox();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: primaryBlue, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          "COORDINATE SURVEY",
-          style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 2),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 500),
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  _buildHeaderInfo(),
-                  const SizedBox(height: 24),
-
-                  // Point 1 Card
-                  _buildPointCard(
-                    title: "START POINT (P1)",
-                    icon: Icons.location_on_outlined,
-                    xCtrl: x1Controller,
-                    yCtrl: y1Controller,
-                    color: primaryBlue,
+      appBar: AppBar(title: const Text("Measurement Tool")),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              DropdownButtonFormField(
+                value: measurementType,
+                items: const [
+                  DropdownMenuItem(
+                    value: "Coordinate Distance",
+                    child: Text("Coordinate Distance"),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Point 2 Card
-                  _buildPointCard(
-                    title: "END POINT (P2)",
-                    icon: Icons.flag_outlined,
-                    xCtrl: x2Controller,
-                    yCtrl: y2Controller,
-                    color: accentBlue,
+                  DropdownMenuItem(value: "Length", child: Text("Length")),
+                  DropdownMenuItem(value: "Area", child: Text("Area")),
+                  DropdownMenuItem(
+                    value: "Triangle Area",
+                    child: Text("Triangle Area"),
                   ),
-
-                  const SizedBox(height: 32),
-
-                  _buildCalculateButton(),
-
-                  if (distance != null) _buildResultCard(),
+                  DropdownMenuItem(
+                    value: "Perimeter",
+                    child: Text("Perimeter"),
+                  ),
+                  DropdownMenuItem(value: "Slope", child: Text("Slope (%)")),
+                  DropdownMenuItem(value: "Volume", child: Text("Volume")),
                 ],
+                onChanged: (v) {
+                  setState(() {
+                    measurementType = v!;
+                    result = null;
+                  });
+                },
               ),
-            ),
+
+              const SizedBox(height: 20),
+
+              buildInputs(),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: calculate,
+                  child: const Text("CALCULATE"),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              if (result != null)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: primaryBlue,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "RESULT",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        result!.toStringAsFixed(3),
+                        style: const TextStyle(
+                          fontSize: 34,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildHeaderInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: accentBlue.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentBlue.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline_rounded, color: accentBlue, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "Enter Euclidean coordinates to calculate the linear distance between two points.",
-              style: TextStyle(color: primaryBlue.withOpacity(0.7), fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+extension on double {
+  double sqrt() => (this >= 0) ? (this).toDouble().pow(0.5) : 0;
+}
 
-  Widget _buildPointCard({
-    required String title,
-    required IconData icon,
-    required TextEditingController xCtrl,
-    required TextEditingController yCtrl,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 18),
-              const SizedBox(width: 8),
-              Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _buildCoordinateInput(xCtrl, "X Coordinate")),
-              const SizedBox(width: 12),
-              Expanded(child: _buildCoordinateInput(yCtrl, "Y Coordinate")),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCoordinateInput(TextEditingController ctrl, String label) {
-    return TextFormField(
-      controller: ctrl,
-      keyboardType: TextInputType.number,
-      validator: (v) => Validators.validateRequired(v, label),
-      style: const TextStyle(fontWeight: FontWeight.bold, color: primaryBlue),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: primaryBlue.withOpacity(0.4), fontSize: 12),
-        filled: true,
-        fillColor: bgColor,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-    );
-  }
-
-  Widget _buildCalculateButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 2,
-        ),
-        onPressed: calculateDistance,
-        child: const Text("CALCULATE MEASUREMENT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)),
-      ),
-    );
-  }
-
-  Widget _buildResultCard() {
-    return Container(
-      margin: const EdgeInsets.only(top: 24),
-      padding: const EdgeInsets.all(24),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [primaryBlue, Color(0xFF162D6D)]),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          const Text("CALCULATED DISTANCE", style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 2)),
-          const SizedBox(height: 8),
-          Text(
-            distance!.toStringAsFixed(3),
-            style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900),
-          ),
-          const Text("UNITS", style: TextStyle(color: Colors.white54, fontSize: 10)),
-        ],
-      ),
-    );
-  }
+extension on num {
+  double pow(num exponent) => (this as double).pow(exponent);
 }

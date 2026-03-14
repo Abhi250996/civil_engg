@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/constants/route_constants.dart';
 import '../controllers/calculation_controller.dart';
 
 class StructureInputScreen extends StatefulWidget {
@@ -17,29 +16,45 @@ class _StructureInputScreenState extends State<StructureInputScreen> {
   static const primaryBlue = Color(0xFF1E3A8A);
   static const accentBlue = Color(0xFF3B82F6);
   static const bgColor = Color(0xFFF8FAFC);
-  static const borderColor = Color(0xFFE5E7EB);
 
-  // Controllers
+  /// PROJECT
   final projectNameController = TextEditingController();
+  final locationController = TextEditingController();
+
+  /// SITE
   final lengthController = TextEditingController();
   final widthController = TextEditingController();
-  final floorsController = TextEditingController(text: "1");
+
+  /// REGULATIONS
   final frontSetbackController = TextEditingController(text: "1.5");
+  final rearSetbackController = TextEditingController(text: "1.0");
   final sideSetbackController = TextEditingController(text: "1.0");
+
+  /// BUILDING
+  final floorsController = TextEditingController(text: "1");
   final roomsController = TextEditingController(text: "2");
+  final floorHeightController = TextEditingController(text: "3.0");
 
-  // Specific Controllers for Road/Industry
-  final thicknessController = TextEditingController(text: "200"); // mm
-  final loadController = TextEditingController(text: "50"); // Tons
+  /// STRUCTURE
+  final soilController = TextEditingController(text: "150");
+  final seismicZoneController = TextEditingController(text: "3");
+  final loadController = TextEditingController(text: "50");
 
-  String unitSystem = "Metric";
+  /// ROAD / INDUSTRY
+  final thicknessController = TextEditingController(text: "200");
+
+  /// DROPDOWNS
   String orientation = "North";
+  String unitSystem = "Metric";
+  String drawingScale = "1:100";
+  String sheetSize = "A1";
+  String detailLevel = "Standard";
+
   late String structureType;
 
   @override
   void initState() {
     super.initState();
-    // Getting type from arguments
     structureType = (Get.arguments?["type"] ?? "building").toString();
   }
 
@@ -49,15 +64,18 @@ class _StructureInputScreenState extends State<StructureInputScreen> {
       backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 1,
-        toolbarHeight: 60,
         centerTitle: true,
+        title: Text(
+          "${structureType.toUpperCase()} DESIGNER",
+          style: const TextStyle(
+            color: primaryBlue,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: primaryBlue, size: 22),
+          icon: const Icon(Icons.arrow_back_ios_new, color: primaryBlue),
           onPressed: () => Get.back(),
         ),
-        title: Text('${structureType.toUpperCase()} DESIGNER',
-            style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.w900, fontSize: 16)),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -73,31 +91,205 @@ class _StructureInputScreenState extends State<StructureInputScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _sectionTitle("General Information"),
+                      /// PROJECT
+                      _sectionTitle("Project Information"),
                       _buildResponsiveLayout(
                         isDesktop: isDesktop,
                         children: [
-                          _buildTextField(projectNameController, "Project Name", Icons.business),
-                          _buildDropdown("Unit System", unitSystem, ["Metric", "Imperial"], (v) => setState(() => unitSystem = v!)),
+                          _buildTextField(
+                            projectNameController,
+                            "Project Name",
+                            Icons.work,
+                          ),
+                          _buildTextField(
+                            locationController,
+                            "Location",
+                            Icons.location_city,
+                          ),
+                          _buildDropdown(
+                            "Units",
+                            unitSystem,
+                            ["Metric", "Imperial"],
+                            (v) => setState(() => unitSystem = v!),
+                          ),
                         ],
                       ),
 
                       const SizedBox(height: 25),
 
-                      // --- DYNAMIC FILTERING BASED ON TYPE ---
-                      if (structureType == "building") ..._buildHouseInputs(isDesktop),
-                      if (structureType == "road") ..._buildRoadInputs(isDesktop),
-                      if (structureType == "factory" || structureType == "plant") ..._buildIndustrialInputs(isDesktop),
+                      /// SITE
+                      _sectionTitle("Site Geometry"),
+                      _buildResponsiveLayout(
+                        isDesktop: isDesktop,
+                        children: [
+                          _buildTextField(
+                            lengthController,
+                            "Plot Length (m)",
+                            Icons.straighten,
+                            isNum: true,
+                          ),
+                          _buildTextField(
+                            widthController,
+                            "Plot Width (m)",
+                            Icons.square_foot,
+                            isNum: true,
+                          ),
+                          _buildDropdown(
+                            "Orientation",
+                            orientation,
+                            ["North", "South", "East", "West"],
+                            (v) => setState(() => orientation = v!),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      /// SETBACKS
+                      if (structureType == "building") ...[
+                        _sectionTitle("Regulatory Setbacks"),
+                        _buildResponsiveLayout(
+                          isDesktop: isDesktop,
+                          children: [
+                            _buildTextField(
+                              frontSetbackController,
+                              "Front Setback (m)",
+                              Icons.arrow_upward,
+                              isNum: true,
+                            ),
+                            _buildTextField(
+                              rearSetbackController,
+                              "Rear Setback (m)",
+                              Icons.arrow_downward,
+                              isNum: true,
+                            ),
+                            _buildTextField(
+                              sideSetbackController,
+                              "Side Setback (m)",
+                              Icons.arrow_back,
+                              isNum: true,
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: 25),
+
+                      /// BUILDING PROGRAM
+                      if (structureType == "building") ...[
+                        _sectionTitle("Building Program"),
+                        _buildResponsiveLayout(
+                          isDesktop: isDesktop,
+                          children: [
+                            _buildTextField(
+                              floorsController,
+                              "Floors",
+                              Icons.layers,
+                              isNum: true,
+                            ),
+                            _buildTextField(
+                              roomsController,
+                              "Rooms / BHK",
+                              Icons.bed,
+                              isNum: true,
+                            ),
+                            _buildTextField(
+                              floorHeightController,
+                              "Floor Height (m)",
+                              Icons.height,
+                              isNum: true,
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: 25),
+
+                      /// STRUCTURE
+                      _sectionTitle("Structural Parameters"),
+                      _buildResponsiveLayout(
+                        isDesktop: isDesktop,
+                        children: [
+                          _buildTextField(
+                            soilController,
+                            "Soil Bearing Capacity (kN/m²)",
+                            Icons.terrain,
+                            isNum: true,
+                          ),
+                          _buildTextField(
+                            seismicZoneController,
+                            "Seismic Zone",
+                            Icons.warning,
+                            isNum: true,
+                          ),
+                          _buildTextField(
+                            loadController,
+                            "Design Load",
+                            Icons.fitness_center,
+                            isNum: true,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      /// ROAD
+                      if (structureType == "road") ...[
+                        _sectionTitle("Road Parameters"),
+                        _buildResponsiveLayout(
+                          isDesktop: isDesktop,
+                          children: [
+                            _buildTextField(
+                              lengthController,
+                              "Road Length (km)",
+                              Icons.add_road,
+                              isNum: true,
+                            ),
+                            _buildTextField(
+                              widthController,
+                              "Carriageway Width (m)",
+                              Icons.width_full,
+                              isNum: true,
+                            ),
+                            _buildTextField(
+                              thicknessController,
+                              "Pavement Thickness (mm)",
+                              Icons.layers,
+                              isNum: true,
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: 25),
+
+                      /// DRAWING SETTINGS
+                      _sectionTitle("Drawing Preferences"),
+                      _buildResponsiveLayout(
+                        isDesktop: isDesktop,
+                        children: [
+                          _buildDropdown(
+                            "Scale",
+                            drawingScale,
+                            ["1:50", "1:100", "1:200"],
+                            (v) => setState(() => drawingScale = v!),
+                          ),
+                          _buildDropdown(
+                            "Sheet Size",
+                            sheetSize,
+                            ["A0", "A1", "A2", "A3"],
+                            (v) => setState(() => sheetSize = v!),
+                          ),
+                          _buildDropdown(
+                            "Detail Level",
+                            detailLevel,
+                            ["Concept", "Standard", "Construction"],
+                            (v) => setState(() => detailLevel = v!),
+                          ),
+                        ],
+                      ),
 
                       const SizedBox(height: 40),
-
-                      // Status Message display
-                      Obx(() => controller.statusMessage.isNotEmpty
-                          ? Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Center(child: Text(controller.statusMessage.value, style: const TextStyle(color: accentBlue, fontWeight: FontWeight.bold))),
-                      )
-                          : const SizedBox.shrink()),
 
                       Center(
                         child: ConstrainedBox(
@@ -116,164 +308,151 @@ class _StructureInputScreenState extends State<StructureInputScreen> {
     );
   }
 
-  // --- HOUSE SPECIFIC INPUTS ---
-  List<Widget> _buildHouseInputs(bool isDesktop) {
-    return [
-      _sectionTitle("Plot Dimensions & Orientation"),
-      _buildResponsiveLayout(isDesktop: isDesktop, children: [
-        _buildTextField(lengthController, "Length (m)", Icons.straighten, isNum: true),
-        _buildTextField(widthController, "Width (m)", Icons.square_foot, isNum: true),
-        _buildDropdown("Facing", orientation, ["North", "South", "East", "West"], (v) => setState(() => orientation = v!)),
-      ]),
-      const SizedBox(height: 25),
-      _sectionTitle("Setbacks & Requirements"),
-      _buildResponsiveLayout(isDesktop: isDesktop, children: [
-        _buildTextField(frontSetbackController, "Front (m)", Icons.door_front_door, isNum: true),
-        _buildTextField(floorsController, "Floors", Icons.layers, isNum: true),
-        _buildTextField(roomsController, "BHK", Icons.bed, isNum: true),
-      ]),
-    ];
-  }
+  /// BUTTON
+  Widget _buildGenerateButton() {
+    return SizedBox(
+      height: 60,
+      child: Obx(
+        () => ElevatedButton.icon(
+          icon: controller.isLoading.value
+              ? const CircularProgressIndicator(color: Colors.white)
+              : const Icon(Icons.architecture),
+          label: Text(
+            controller.isLoading.value
+                ? "PROCESSING..."
+                : "GENERATE PROFESSIONAL DRAWING",
+          ),
+          onPressed: controller.isLoading.value
+              ? null
+              : () {
+                  if (_formKey.currentState!.validate()) {
+                    Map<String, dynamic> data = {
+                      "project": {
+                        "name": projectNameController.text,
+                        "location": locationController.text,
+                        "unit": unitSystem,
+                      },
 
-  // --- ROAD SPECIFIC INPUTS ---
-  List<Widget> _buildRoadInputs(bool isDesktop) {
-    return [
-      _sectionTitle("Road Geometry"),
-      _buildResponsiveLayout(isDesktop: isDesktop, children: [
-        _buildTextField(lengthController, "Total Length (km)", Icons.add_road, isNum: true),
-        _buildTextField(widthController, "Carriageway Width (m)", Icons.width_full, isNum: true),
-        _buildTextField(thicknessController, "Pavement Thick (mm)", Icons.layers_outlined, isNum: true),
-      ]),
-    ];
-  }
+                      "site": {
+                        "length": lengthController.text,
+                        "width": widthController.text,
+                        "orientation": orientation,
+                      },
 
-  // --- INDUSTRIAL SPECIFIC INPUTS ---
-  List<Widget> _buildIndustrialInputs(bool isDesktop) {
-    return [
-      _sectionTitle("Plant Capacity & Area"),
-      _buildResponsiveLayout(isDesktop: isDesktop, children: [
-        _buildTextField(lengthController, "Shed Length (m)", Icons.factory, isNum: true),
-        _buildTextField(widthController, "Shed Width (m)", Icons.aspect_ratio, isNum: true),
-        _buildTextField(loadController, "Floor Load (T/m2)", Icons.fitness_center, isNum: true),
-      ]),
-    ];
-  }
+                      "regulations": {
+                        "frontSetback": frontSetbackController.text,
+                        "rearSetback": rearSetbackController.text,
+                        "sideSetback": sideSetbackController.text,
+                      },
 
-  // --- REUSABLE COMPONENTS ---
+                      "building": {
+                        "floors": floorsController.text,
+                        "rooms": roomsController.text,
+                        "floorHeight": floorHeightController.text,
+                      },
 
-  Widget _buildResponsiveLayout({required bool isDesktop, required List<Widget> children}) {
-    if (isDesktop) {
-      return Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: borderColor)),
-        child: Row(children: children.map((c) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: c))).toList()),
-      );
-    } else {
-      return Column(children: children.map((c) => Padding(padding: const EdgeInsets.only(bottom: 12), child: c)).toList());
-    }
-  }
+                      "structure": {
+                        "soilBearingCapacity": soilController.text,
+                        "seismicZone": seismicZoneController.text,
+                        "designLoad": loadController.text,
+                      },
 
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
-      child: Text(title.toUpperCase(), style: const TextStyle(color: primaryBlue, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      "drawing": {
+                        "scale": drawingScale,
+                        "sheetSize": sheetSize,
+                        "detailLevel": detailLevel,
+                      },
+                    };
+
+                    controller.generateDrawingFromInputs(
+                      type: structureType,
+                      inputData: data,
+                    );
+                  }
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryBlue,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildTextField(TextEditingController ctrl, String label, IconData icon, {bool isNum = false}) {
+  /// COMPONENTS
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(fontWeight: FontWeight.w900, color: primaryBlue),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    TextEditingController ctrl,
+    String label,
+    IconData icon, {
+    bool isNum = false,
+  }) {
     return TextFormField(
       controller: ctrl,
       keyboardType: isNum ? TextInputType.number : TextInputType.text,
       validator: (v) => v == null || v.isEmpty ? "Required" : null,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryBlue),
       decoration: InputDecoration(
         labelText: label,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        prefixIcon: Icon(icon, size: 20, color: accentBlue),
-        labelStyle: TextStyle(color: primaryBlue.withOpacity(0.6), fontSize: 14, fontWeight: FontWeight.w600),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: borderColor, width: 1.5)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: accentBlue, width: 2)),
+        prefixIcon: Icon(icon, color: accentBlue),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
-  Widget _buildDropdown(String label, String value, List<String> items, Function(String?) onChanged) {
+  Widget _buildDropdown(
+    String label,
+    String value,
+    List<String> items,
+    Function(String?) onChanged,
+  ) {
     return DropdownButtonFormField<String>(
       value: value,
-      iconSize: 24,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryBlue),
       decoration: InputDecoration(
         labelText: label,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        labelStyle: TextStyle(color: primaryBlue.withOpacity(0.6), fontSize: 14, fontWeight: FontWeight.w600),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: borderColor, width: 1.5)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      items: items
+          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+          .toList(),
       onChanged: onChanged,
     );
   }
 
-  Widget _buildGenerateButton() {
-    return SizedBox(
-      height: 60,
-      width: double.infinity,
-      child: Obx(() => ElevatedButton.icon(
-        icon: controller.isLoading.value
-            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : const Icon(Icons.architecture_rounded, size: 24),
-        label: Text(
-            controller.isLoading.value ? "PROCESSING..." : "GENERATE PROFESSIONAL PLAN",
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)
-        ),
-        onPressed: controller.isLoading.value ? null : () {
-          if (_formKey.currentState!.validate()) {
-            // DATA COLLECTION START
-            Map<String, dynamic> dataToSave = {
-              "projectName": projectNameController.text,
-              "unit": unitSystem,
-              "length": lengthController.text,
-              "width": widthController.text,
-            };
-
-            // Adding type specific data
-            if (structureType == "building") {
-              dataToSave.addAll({
-                "orientation": orientation,
-                "frontSetback": frontSetbackController.text,
-                "sideSetback": sideSetbackController.text,
-                "floors": floorsController.text,
-                "rooms": roomsController.text,
-              });
-            } else if (structureType == "road") {
-              dataToSave.addAll({
-                "thickness": thicknessController.text,
-              });
-            } else if (structureType == "factory" || structureType == "plant") {
-              dataToSave.addAll({
-                "load": loadController.text,
-              });
-            }
-
-            // FINAL CALL TO CONTROLLER
-            controller.generateDrawingFromInputs(
-                type: structureType,
-                inputData: dataToSave
-            );
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          foregroundColor: Colors.white,
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        ),
-      )),
+  Widget _buildResponsiveLayout({
+    required bool isDesktop,
+    required List<Widget> children,
+  }) {
+    if (isDesktop) {
+      return Row(
+        children: children
+            .map(
+              (c) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: c,
+                ),
+              ),
+            )
+            .toList(),
+      );
+    }
+    return Column(
+      children: children
+          .map(
+            (c) =>
+                Padding(padding: const EdgeInsets.only(bottom: 12), child: c),
+          )
+          .toList(),
     );
   }
 }

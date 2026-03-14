@@ -48,6 +48,10 @@ dependencies:
   sensors_plus: ^5.0.1
   geolocator: ^11.0.0
   intl: ^0.20.2
+  syncfusion_flutter_pdfviewer: ^32.2.9
+  printing: ^5.14.2
+  image_gallery_saver: ^2.0.3
+  share_plus: ^12.0.1
 
 dev_dependencies:
   flutter_test:
