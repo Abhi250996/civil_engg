@@ -58,17 +58,28 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: primaryBlue, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: primaryBlue,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: const Text(
           "DOCUMENT GENERATOR",
-          style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 2),
+          style: TextStyle(
+            color: primaryBlue,
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+            letterSpacing: 2,
+          ),
         ),
       ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000), // Desktop par window fit rakhega
+          constraints: const BoxConstraints(
+            maxWidth: 1000,
+          ), // Desktop par window fit rakhega
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
@@ -76,41 +87,87 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _sectionHeader("Report Classification", Icons.assignment_outlined),
+                  _sectionHeader(
+                    "Report Classification",
+                    Icons.assignment_outlined,
+                  ),
                   _buildResponsiveGrid(width, [
-                    _inputField(titleController, "Report Title", Icons.description, true),
-                    _dropdownField("Report Type", reportType, Icons.category,
-                        ["Structural", "Geotechnical", "Survey", "Inspection"],
-                            (v) => setState(() => reportType = v)),
-                    _dropdownField("Category", category, Icons.layers,
-                        ["Engineering", "Safety", "Construction"],
-                            (v) => setState(() => category = v)),
+                    _inputField(
+                      titleController,
+                      "Report Title",
+                      Icons.description,
+                      true,
+                    ),
+                    _dropdownField(
+                      "Report Type",
+                      reportType,
+                      Icons.category,
+                      ["Structural", "Geotechnical", "Survey", "Inspection"],
+                      (v) => setState(() => reportType = v),
+                    ),
+                    _dropdownField(
+                      "Category",
+                      category,
+                      Icons.layers,
+                      ["Engineering", "Safety", "Construction"],
+                      (v) => setState(() => category = v),
+                    ),
                   ]),
 
                   const SizedBox(height: 32),
                   _sectionHeader("Stakeholder Details", Icons.badge_outlined),
                   _buildResponsiveGrid(width, [
-                    _inputField(authorController, "Author Name", Icons.person_outline, false),
-                    _inputField(engineerController, "Lead Engineer", Icons.engineering_outlined, false),
-                    _inputField(organizationController, "Organization", Icons.business, false),
+                    _inputField(
+                      authorController,
+                      "Author Name",
+                      Icons.person_outline,
+                      false,
+                    ),
+                    _inputField(
+                      engineerController,
+                      "Lead Engineer",
+                      Icons.engineering_outlined,
+                      false,
+                    ),
+                    _inputField(
+                      organizationController,
+                      "Organization",
+                      Icons.business,
+                      false,
+                    ),
                   ]),
 
                   const SizedBox(height: 32),
-                  _sectionHeader("Documentation & Metadata", Icons.attachment_rounded),
+                  _sectionHeader(
+                    "Documentation & Metadata",
+                    Icons.attachment_rounded,
+                  ),
                   _buildFilePicker(),
                   const SizedBox(height: 16),
                   _buildResponsiveGrid(width, [
-                    _inputField(locationController, "Site Location", Icons.location_on_outlined, false),
-                    _dropdownField("Document Status", status, Icons.check_circle_outline,
-                        ["Draft", "Submitted", "Approved"],
-                            (v) => setState(() => status = v)),
+                    _inputField(
+                      locationController,
+                      "Site Location",
+                      Icons.location_on_outlined,
+                      false,
+                    ),
+                    _dropdownField(
+                      "Document Status",
+                      status,
+                      Icons.check_circle_outline,
+                      ["Draft", "Submitted", "Approved"],
+                      (v) => setState(() => status = v),
+                    ),
                   ]),
 
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: descriptionController,
                     maxLines: 3,
-                    decoration: _inputDecoration("Executive Summary / Notes", Icons.notes),
+                    decoration: _inputDecoration(
+                      "Executive Summary / Notes",
+                      Icons.notes,
+                    ),
                   ),
 
                   const SizedBox(height: 40),
@@ -134,7 +191,15 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         children: [
           Icon(icon, color: accentBlue, size: 20),
           const SizedBox(width: 8),
-          Text(title.toUpperCase(), style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1.5)),
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              color: primaryBlue,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+              letterSpacing: 1.5,
+            ),
+          ),
         ],
       ),
     );
@@ -163,35 +228,69 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       filled: true,
       fillColor: Colors.white,
       labelStyle: TextStyle(color: primaryBlue.withOpacity(0.4), fontSize: 13),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: accentBlue, width: 2)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: accentBlue, width: 2),
+      ),
     );
   }
 
-  Widget _inputField(TextEditingController ctrl, String label, IconData icon, bool req) {
-    return TextFormField(controller: ctrl, validator: req ? (v) => Validators.validateRequired(v, label) : null, decoration: _inputDecoration(label, icon));
+  Widget _inputField(
+    TextEditingController ctrl,
+    String label,
+    IconData icon,
+    bool req,
+  ) {
+    return TextFormField(
+      controller: ctrl,
+      validator: req ? (v) => Validators.validateRequired(v, label) : null,
+      decoration: _inputDecoration(label, icon),
+    );
   }
 
-  Widget _dropdownField(String label, String? val, IconData icon, List<String> items, Function(String?) onChg) {
+  Widget _dropdownField(
+    String label,
+    String? val,
+    IconData icon,
+    List<String> items,
+    Function(String?) onChg,
+  ) {
     return DropdownButtonFormField<String>(
-      value: val,
+      initialValue: val,
       onChanged: onChg,
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      items: items
+          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+          .toList(),
       decoration: _inputDecoration(label, icon),
     );
   }
 
   Widget _buildFilePicker() {
-    return Obx(() => TextFormField(
-      readOnly: true,
-      controller: TextEditingController(text: controller.selectedFilePath.value),
-      decoration: _inputDecoration("Attach Technical Document", Icons.attach_file).copyWith(
-        suffixIcon: IconButton(
-          icon: const Icon(Icons.cloud_upload_outlined, color: accentBlue),
-          onPressed: controller.pickFile,
+    return Obx(
+      () => TextFormField(
+        readOnly: true,
+        controller: TextEditingController(
+          text: controller.selectedFilePath.value,
         ),
+        decoration:
+            _inputDecoration(
+              "Attach Technical Document",
+              Icons.attach_file,
+            ).copyWith(
+              suffixIcon: IconButton(
+                icon: const Icon(
+                  Icons.cloud_upload_outlined,
+                  color: accentBlue,
+                ),
+                onPressed: controller.pickFile,
+              ),
+            ),
       ),
-    ));
+    );
   }
 
   Widget _buildSubmitButton() {
@@ -201,12 +300,31 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(colors: [primaryBlue, accentBlue]),
-        boxShadow: [BoxShadow(color: primaryBlue.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+        boxShadow: [
+          BoxShadow(
+            color: primaryBlue.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
         onPressed: createReport,
-        child: const Text("GENERATE OFFICIAL REPORT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        child: const Text(
+          "GENERATE OFFICIAL REPORT",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
       ),
     );
   }

@@ -12,7 +12,6 @@ class LevelToolScreen extends StatefulWidget {
 class _LevelToolScreenState extends State<LevelToolScreen> {
   final controller = Get.find<FieldToolsController>();
 
-  static const Color primaryBlue = Color(0xFF1E3A8A);
   static const Color accentBlue = Color(0xFF3B82F6);
   static const Color bgColor = Color(0xFFF8FAFC);
 

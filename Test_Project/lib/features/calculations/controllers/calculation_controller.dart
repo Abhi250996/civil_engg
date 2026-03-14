@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../core/constants/route_constants.dart';
 import '../../../data/models/project_model.dart';
@@ -17,222 +20,472 @@ class CalculationController extends GetxController {
 
   final RxDouble buildableArea = 0.0.obs;
 
-  /// STRUCTURE TYPES GRID
+  /// MATERIAL ESTIMATION
+  final RxDouble estimatedConcrete = 0.0.obs;
+  final RxDouble estimatedSteel = 0.0.obs;
+
+  /// ================================
+  /// ALL STRUCTURE TYPES RESTORED
+  /// ================================
+
   final List<Map<String, dynamic>> structureTypes = [
     {"title": "Building / House", "icon": Icons.home_work, "type": "building"},
+
     {"title": "Industrial Plant", "icon": Icons.factory, "type": "plant"},
+
     {
       "title": "Factory Layout",
       "icon": Icons.precision_manufacturing,
       "type": "factory",
     },
+
     {"title": "Road Layout", "icon": Icons.alt_route, "type": "road"},
+
     {"title": "Chimney", "icon": Icons.vertical_align_top, "type": "chimney"},
+
     {"title": "Foundation", "icon": Icons.foundation, "type": "foundation"},
+
     {"title": "Water Tank", "icon": Icons.water, "type": "tank"},
+
     {"title": "Bridge / Overpass", "icon": Icons.edit_road, "type": "bridge"},
+
     {"title": "Tunnel", "icon": Icons.vignette, "type": "tunnel"},
+
     {
       "title": "Retaining Wall",
       "icon": Icons.reorder,
       "type": "retaining_wall",
     },
+
     {"title": "Dam / Levee", "icon": Icons.waves, "type": "dam"},
+
     {
       "title": "Power Line / Tower",
       "icon": Icons.electrical_services,
       "type": "tower",
     },
+
     {"title": "Pipeline", "icon": Icons.polyline, "type": "pipeline"},
+
     {"title": "Solar Farm", "icon": Icons.solar_power, "type": "solar"},
+
     {
       "title": "Cooling Tower",
       "icon": Icons.heat_pump,
       "type": "cooling_tower",
     },
+
     {"title": "Telecom Tower", "icon": Icons.sensors, "type": "telecom"},
+
     {"title": "Warehouse", "icon": Icons.inventory_2, "type": "warehouse"},
+
     {"title": "Silo / Storage", "icon": Icons.storage, "type": "silo"},
+
     {"title": "Parking Lot", "icon": Icons.local_parking, "type": "parking"},
+
     {"title": "Fence / Boundary", "icon": Icons.fence, "type": "fence"},
+
     {"title": "Custom Structure", "icon": Icons.architecture, "type": "custom"},
   ];
 
-  /// OPEN INPUT SCREEN
-  void openStructure(ProjectModel? project, String type) {
-    Get.toNamed(
-      RouteConstants.houseInput,
-      arguments: {"project": project, "type": type},
-    );
+  /// ================================
+  /// UNIT CONVERSION
+  /// ================================
+
+  double convertToMeter(double value, String unit) {
+    switch (unit) {
+      case "mm":
+        return value / 1000;
+
+      case "cm":
+        return value / 100;
+
+      case "m":
+        return value;
+
+      case "inch":
+        return value * 0.0254;
+
+      case "ft":
+        return value * 0.3048;
+
+      case "yard":
+        return value * 0.9144;
+
+      default:
+        return value;
+    }
   }
 
-  /// ======================================================
-  /// MAIN DRAWING GENERATOR
-  /// ======================================================
+  /// ================================
+  /// OPEN INPUT SCREEN
+  /// ================================
+
+  void openStructure(ProjectModel? project, String type) {
+    switch (type) {
+      case "building":
+        Get.toNamed(
+          RouteConstants.buildingInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "road":
+        Get.toNamed(
+          RouteConstants.roadInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "bridge":
+        Get.toNamed(
+          RouteConstants.bridgeInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "tank":
+        Get.toNamed(
+          RouteConstants.tankInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "pipeline":
+        Get.toNamed(
+          RouteConstants.pipelineInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "chimney":
+        Get.toNamed(
+          RouteConstants.chimneyInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "foundation":
+        Get.toNamed(
+          RouteConstants.foundationInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "tunnel":
+        Get.toNamed(
+          RouteConstants.tunnelInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "retaining_wall":
+        Get.toNamed(
+          RouteConstants.retainingWallInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "dam":
+        Get.toNamed(
+          RouteConstants.damInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "tower":
+        Get.toNamed(
+          RouteConstants.towerInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "solar":
+        Get.toNamed(
+          RouteConstants.solarFarmInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "cooling_tower":
+        Get.toNamed(
+          RouteConstants.coolingTowerInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "telecom":
+        Get.toNamed(
+          RouteConstants.telecomTowerInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "warehouse":
+        Get.toNamed(
+          RouteConstants.warehouseInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "silo":
+        Get.toNamed(
+          RouteConstants.siloInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "parking":
+        Get.toNamed(
+          RouteConstants.parkingInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "fence":
+        Get.toNamed(
+          RouteConstants.fenceInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "plant":
+        Get.toNamed(
+          RouteConstants.plantInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "factory":
+        Get.toNamed(
+          RouteConstants.factoryInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      case "custom":
+        Get.toNamed(
+          RouteConstants.customStructureInput,
+          arguments: {"project": project, "type": type},
+        );
+        break;
+
+      default:
+        Get.toNamed(
+          RouteConstants.buildingInput,
+          arguments: {"project": project, "type": type},
+        );
+    }
+  }
+
+  /// ================================
+  /// MAIN AI GENERATION FUNCTION
+  /// ================================
+
   Future<void> generateDrawingFromInputs({
     required String type,
     required Map<String, dynamic> inputData,
   }) async {
     try {
       isLoading.value = true;
-      statusMessage.value = "Preparing engineering parameters...";
+      statusMessage.value = "Analyzing engineering inputs...";
 
-      /// EXTRACT STRUCTURED DATA
+      print("INPUT DATA: $inputData");
 
-      final project = inputData["project"] ?? {};
-      final site = inputData["site"] ?? {};
-      final regulations = inputData["regulations"] ?? {};
-      final building = inputData["building"] ?? {};
-      final structure = inputData["structure"] ?? {};
-      final drawing = inputData["drawing"] ?? {};
+      /// =============================
+      /// BASIC DIMENSIONS
+      /// =============================
 
-      double length = double.tryParse(site["length"]?.toString() ?? "0") ?? 0;
-      double width = double.tryParse(site["width"]?.toString() ?? "0") ?? 0;
+      double length = 0;
+      double width = 0;
+      double height = 0;
 
-      double frontSetback =
-          double.tryParse(regulations["frontSetback"]?.toString() ?? "0") ?? 0;
+      /// BUILDING
+      if (type == "building") {
+        length = double.tryParse(inputData["plotLength"] ?? "0") ?? 0;
+        width = double.tryParse(inputData["plotWidth"] ?? "0") ?? 0;
+        height = double.tryParse(inputData["floorHeight"] ?? "0") ?? 0;
+      }
 
-      double sideSetback =
-          double.tryParse(regulations["sideSetback"]?.toString() ?? "0") ?? 0;
+      /// ROAD
+      if (type == "road") {
+        length = double.tryParse(inputData["roadLength"] ?? "0") ?? 0;
+        width = double.tryParse(inputData["carriagewayWidth"] ?? "0") ?? 0;
+      }
 
-      /// BUILDABLE AREA CALCULATION
+      /// BRIDGE
+      if (type == "bridge") {
+        length = double.tryParse(inputData["spanLength"] ?? "0") ?? 0;
+        width = double.tryParse(inputData["deckWidth"] ?? "0") ?? 0;
+      }
+
+      /// TANK
+      if (type == "tank") {
+        width = double.tryParse(inputData["diameter"] ?? "0") ?? 0;
+        height = double.tryParse(inputData["height"] ?? "0") ?? 0;
+      }
+
+      /// PIPELINE
+      if (type == "pipeline") {
+        width = double.tryParse(inputData["diameter"] ?? "0") ?? 0;
+        length = double.tryParse(inputData["length"] ?? "0") ?? 0;
+      }
+
+      /// TELECOM TOWER
+      if (type == "telecom") {
+        height = double.tryParse(inputData["height"] ?? "0") ?? 0;
+        width = double.tryParse(inputData["baseWidth"] ?? "0") ?? 0;
+      }
+
+      /// WAREHOUSE
+      if (type == "warehouse") {
+        length = double.tryParse(inputData["length"] ?? "0") ?? 0;
+        width = double.tryParse(inputData["width"] ?? "0") ?? 0;
+      }
+
+      /// RETAINING WALL
+      if (type == "retaining_wall") {
+        height = double.tryParse(inputData["wallHeight"] ?? "0") ?? 0;
+        width = double.tryParse(inputData["baseWidth"] ?? "0") ?? 0;
+      }
+
+      /// CHIMNEY
+      if (type == "chimney") {
+        height = double.tryParse(inputData["height"] ?? "0") ?? 0;
+        width = double.tryParse(inputData["diameter"] ?? "0") ?? 0;
+      }
+
+      /// =============================
+      /// BUILDABLE AREA
+      /// =============================
 
       if (length > 0 && width > 0) {
-        buildableArea.value =
-            (width - (2 * sideSetback)) * (length - frontSetback);
+        buildableArea.value = length * width;
       }
 
-      String aiPrompt = "";
+      /// =============================
+      /// GRID GENERATION
+      /// =============================
 
-      /// ======================================================
-      /// BUILDING PROMPT
-      /// ======================================================
+      int gridX = length > 0 ? (length / 5).ceil() : 0;
+      int gridY = width > 0 ? (width / 5).ceil() : 0;
 
-      if (type == "building") {
-        aiPrompt =
-            """
-Task: Professional Architectural Floor Plan
+      /// =============================
+      /// MATERIAL ESTIMATION
+      /// =============================
 
-Project: ${project["name"]}
-Location: ${project["location"]}
+      double area = length * width;
 
-Plot Dimensions: ${length}m x ${width}m
-Orientation: ${site["orientation"]}
+      estimatedConcrete.value = area * 0.12;
+      estimatedSteel.value = estimatedConcrete.value * 80;
 
-Regulations:
-Front Setback: ${regulations["frontSetback"]} m
-Rear Setback: ${regulations["rearSetback"]} m
-Side Setback: ${regulations["sideSetback"]} m
+      /// =============================
+      /// AI PROMPT
+      /// =============================
 
-Building Program:
-Floors: ${building["floors"]}
-Rooms: ${building["rooms"]} BHK
-Floor Height: ${building["floorHeight"]} m
-
-Structural Inputs:
-Soil Bearing Capacity: ${structure["soilBearingCapacity"]} kN/m²
-Seismic Zone: ${structure["seismicZone"]}
-
-Drawing Settings:
-Scale: ${drawing["scale"]}
-Sheet Size: ${drawing["sheetSize"]}
-Detail Level: ${drawing["detailLevel"]}
-
-Output:
-Professional dimensioned blueprint style architectural floor plan
-with walls, rooms, circulation spaces, structural grid, and annotations.
-""";
-      }
-      /// ======================================================
-      /// ROAD PROMPT
-      /// ======================================================
-      else if (type == "road") {
-        aiPrompt =
-            """
-Task: Civil Engineering Road Layout Drawing
-
-Project: ${project["name"]}
-Location: ${project["location"]}
-
-Road Length: ${site["length"]} km
-Carriageway Width: ${site["width"]} m
-Pavement Thickness: ${structure["thickness"] ?? "200"} mm
-
-Design Conditions:
-Soil Bearing Capacity: ${structure["soilBearingCapacity"]}
-
-Output:
-Professional civil engineering road layout with cross-section,
-layered pavement structure, drainage, and dimensions.
-""";
-      }
-      /// ======================================================
-      /// INDUSTRIAL PROMPT
-      /// ======================================================
-      else if (type == "factory" || type == "plant") {
-        aiPrompt =
-            """
-Task: Industrial Building Layout
-
-Project: ${project["name"]}
-Location: ${project["location"]}
-
-Building Size: ${length}m x ${width}m
-Structural Load Capacity: ${structure["designLoad"]} tons/m²
-
-Output:
-Industrial factory layout with machinery zones,
-structural grid, ventilation spaces and loading areas.
-""";
-      }
-      /// ======================================================
-      /// DEFAULT PROMPT
-      /// ======================================================
-      else {
-        aiPrompt =
-            """
-Task: Civil Engineering Structure Layout
+      String aiPrompt =
+          """
+Civil Engineering Technical Drawing
 
 Structure Type: $type
 
-Site Size:
-Length: $length m
-Width: $width m
+Dimensions:
 
-Create a professional engineering layout drawing with
-clear structural geometry, annotations, and blueprint style.
+Length: ${length.toStringAsFixed(2)} meters
+Width: ${width.toStringAsFixed(2)} meters
+Height: ${height.toStringAsFixed(2)} meters
+
+Generate a professional engineering blueprint.
+
+Include:
+
+• Structural layout
+• Dimension labels with units (meters)
+• Engineering annotations
+• Technical drawing style
+""";
+
+      /// Building specific
+      if (type == "building") {
+        aiPrompt +=
+            """
+
+Also include:
+
+• Floor plan
+• Room layout
+• Column grid (${gridX} x ${gridY})
 """;
       }
 
-      statusMessage.value = "AI is generating the professional drawing...";
+      /// Bridge specific
+      if (type == "bridge") {
+        aiPrompt += """
 
-      /// CALL AI SERVICE
+Include:
+
+• Bridge deck
+• Pier locations
+• Structural supports
+""";
+      }
+
+      /// Road specific
+      if (type == "road") {
+        aiPrompt += """
+
+Include:
+
+• Road cross section
+• Pavement layers
+• Drainage
+""";
+      }
+
+      statusMessage.value = "AI generating engineering drawing...";
+
+      /// =============================
+      /// CALL AI
+      /// =============================
 
       final response = await _aiRepository.generateDrawing(
         inputData: {"prompt": aiPrompt, "meta_data": inputData},
       );
 
-      if (response != null && response["image"] != null) {
+      if (response["image"] != null) {
         imageUrl.value = response["image"];
-
         statusMessage.value = "Drawing Generated Successfully";
-
         Get.toNamed(RouteConstants.drawingResult);
       } else {
-        throw "AI returned invalid drawing data";
+        throw "AI returned invalid drawing";
       }
     } catch (e) {
       statusMessage.value = "Error generating drawing";
-
       debugPrint("AI Drawing Error: $e");
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// ======================================================
+  /// ================================
+  /// IMAGE FETCH
+  /// ================================
+
+  Future<Uint8List> getImageBytes() async {
+    final url = imageUrl.value;
+
+    if (url.startsWith("data:image")) {
+      return base64Decode(url.split(',').last);
+    }
+
+    final response = await http.get(Uri.parse(url));
+
+    return response.bodyBytes;
+  }
+
+  /// ================================
   /// VIEWER CONTROLS
-  /// ======================================================
+  /// ================================
 
   void updateZoom(double scale) {
     currentZoom.value = scale;
@@ -240,18 +493,22 @@ clear structural geometry, annotations, and blueprint style.
 
   void resetZoom() {
     transController.value = Matrix4.identity();
+
     currentZoom.value = 1.0;
   }
 
   void clearDrawing() {
     imageUrl.value = "";
+
     statusMessage.value = "";
+
     resetZoom();
   }
 
   @override
   void onClose() {
     transController.dispose();
+
     super.onClose();
   }
 }

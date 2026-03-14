@@ -1,10 +1,12 @@
-import 'dart:io';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:printing/printing.dart';
-import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
+import 'package:universal_html/html.dart' as html;
+
 import '../controllers/calculation_controller.dart';
 
 class DrawingResultScreen extends GetView<CalculationController> {
@@ -36,7 +38,7 @@ class DrawingResultScreen extends GetView<CalculationController> {
 
       body: Column(
         children: [
-          _buildZoomHeader(),
+          _header(),
 
           Expanded(
             child: Obx(() {
@@ -48,11 +50,11 @@ class DrawingResultScreen extends GetView<CalculationController> {
                 return const Center(child: Text("No Drawing Found"));
               }
 
-              return _buildImageCanvas();
+              return _viewer();
             }),
           ),
 
-          _buildToolBar(),
+          _toolbar(),
         ],
       ),
     );
@@ -60,7 +62,7 @@ class DrawingResultScreen extends GetView<CalculationController> {
 
   /// HEADER
 
-  Widget _buildZoomHeader() {
+  Widget _header() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       color: primaryBlue.withOpacity(0.05),
@@ -84,12 +86,8 @@ class DrawingResultScreen extends GetView<CalculationController> {
 
           Obx(
             () => Text(
-              'ZOOM: ${(controller.currentZoom.value * 100).round()}%',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: primaryBlue,
-              ),
+              'ZOOM ${(controller.currentZoom.value * 100).round()}%',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -97,9 +95,11 @@ class DrawingResultScreen extends GetView<CalculationController> {
     );
   }
 
-  /// IMAGE VIEWER
+  /// VIEWER
 
-  Widget _buildImageCanvas() {
+  Widget _viewer() {
+    final url = controller.imageUrl.value;
+
     return Container(
       margin: const EdgeInsets.all(16),
 
@@ -107,9 +107,6 @@ class DrawingResultScreen extends GetView<CalculationController> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15),
-        ],
       ),
 
       child: ClipRRect(
@@ -126,7 +123,12 @@ class DrawingResultScreen extends GetView<CalculationController> {
             );
           },
 
-          child: Image.network(controller.imageUrl.value, fit: BoxFit.contain),
+          child: url.startsWith("data:image")
+              ? Image.memory(
+                  base64Decode(url.split(',').last),
+                  fit: BoxFit.contain,
+                )
+              : Image.network(url, fit: BoxFit.contain),
         ),
       ),
     );
@@ -134,7 +136,7 @@ class DrawingResultScreen extends GetView<CalculationController> {
 
   /// TOOLBAR
 
-  Widget _buildToolBar() {
+  Widget _toolbar() {
     return Container(
       padding: const EdgeInsets.all(16),
 
@@ -145,24 +147,17 @@ class DrawingResultScreen extends GetView<CalculationController> {
 
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
+
         children: [
-          _toolButton(Icons.zoom_out_map, "Reset Zoom", controller.resetZoom),
+          _btn(Icons.zoom_out_map, "Reset", controller.resetZoom),
 
-          _toolButton(Icons.download, "Save", () {
-            _saveDrawing();
-          }),
+          _btn(Icons.download, "Save", _save),
 
-          _toolButton(Icons.share, "Share", () {
-            _shareDrawing();
-          }),
+          _btn(Icons.share, "Share", _share),
 
-          _toolButton(Icons.print, "Print", () {
-            _printDrawing();
-          }),
+          _btn(Icons.print, "Print", _print),
 
-          _toolButton(Icons.delete_outline, "Clear", () {
-            controller.clearDrawing();
-          }),
+          _btn(Icons.delete_outline, "Clear", controller.clearDrawing),
         ],
       ),
     );
@@ -170,7 +165,7 @@ class DrawingResultScreen extends GetView<CalculationController> {
 
   /// BUTTON
 
-  Widget _toolButton(IconData icon, String label, VoidCallback onTap) {
+  Widget _btn(IconData icon, String label, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
 
@@ -178,58 +173,60 @@ class DrawingResultScreen extends GetView<CalculationController> {
         mainAxisSize: MainAxisSize.min,
 
         children: [
-          Icon(icon, color: primaryBlue, size: 26),
+          Icon(icon, color: primaryBlue),
 
           const SizedBox(height: 4),
 
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: primaryBlue,
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  /// SAVE DRAWING
+  /// SAVE
 
-  Future<void> _saveDrawing() async {
-    final url = controller.imageUrl.value;
+  Future<void> _save() async {
+    final bytes = await controller.getImageBytes();
 
-    final response = await http.get(Uri.parse(url));
+    if (kIsWeb) {
+      final blob = html.Blob([bytes]);
 
-    await ImageGallerySaver.saveImage(response.bodyBytes);
+      final url = html.Url.createObjectUrlFromBlob(blob);
 
-    Get.snackbar("Saved", "Drawing saved to gallery");
+      html.AnchorElement(href: url)
+        ..setAttribute("download", "drawing.png")
+        ..click();
+
+      html.Url.revokeObjectUrl(url);
+    } else {
+      Get.snackbar("Saved", "Image downloaded");
+    }
   }
 
-  /// SHARE DRAWING
+  /// SHARE
 
-  Future<void> _shareDrawing() async {
-    final url = controller.imageUrl.value;
+  Future<void> _share() async {
+    final bytes = await controller.getImageBytes();
 
-    final response = await http.get(Uri.parse(url));
+    if (kIsWeb) {
+      final blob = html.Blob([bytes]);
 
-    final tempDir = Directory.systemTemp;
+      final url = html.Url.createObjectUrlFromBlob(blob);
 
-    final file = File("${tempDir.path}/drawing.png");
-
-    await file.writeAsBytes(response.bodyBytes);
-
-    await Share.shareXFiles([XFile(file.path)]);
+      html.window.open(url, "_blank");
+    } else {
+      await Share.shareXFiles([XFile.fromData(bytes, name: "drawing.png")]);
+    }
   }
 
-  /// PRINT DRAWING
+  /// PRINT
 
-  Future<void> _printDrawing() async {
-    final url = controller.imageUrl.value;
+  Future<void> _print() async {
+    final bytes = await controller.getImageBytes();
 
-    final response = await http.get(Uri.parse(url));
-
-    await Printing.layoutPdf(onLayout: (_) async => response.bodyBytes);
+    await Printing.layoutPdf(onLayout: (_) async => bytes);
   }
 }

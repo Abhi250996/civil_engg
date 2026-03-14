@@ -29,31 +29,33 @@ class FieldToolsScreen extends StatelessWidget {
         icon: Icons.straighten_rounded,
         onTap: controller.openMeasurement,
       ),
+
       ToolCard(
         title: "Level",
         subtitle: "Spirit Tool",
         icon: Icons.architecture_rounded,
         onTap: controller.openLevelTool,
       ),
+
       ToolCard(
         title: "GPS",
         subtitle: "Mapping",
         icon: Icons.map_rounded,
         onTap: controller.openGpsTool,
       ),
+
       ToolCard(
         title: "Area",
         subtitle: "Plot Size",
         icon: Icons.square_foot_rounded,
-        isLocked: true,
-        onTap: () {},
+        onTap: controller.openAreaTool,
       ),
+
       ToolCard(
         title: "Slope",
         subtitle: "Gradient",
         icon: Icons.show_chart_rounded,
-        isLocked: true,
-        onTap: () {},
+        onTap: controller.openSlopeTool,
       ),
 
       /// ---------------- CALCULATORS ----------------
@@ -63,12 +65,14 @@ class FieldToolsScreen extends StatelessWidget {
         icon: Icons.sync_alt_rounded,
         onTap: controller.openUnitConverter,
       ),
+
       ToolCard(
         title: "Concrete",
         subtitle: "Volume Calc",
         icon: Icons.layers_rounded,
         onTap: controller.openConcreteCalc,
       ),
+
       ToolCard(
         title: "Steel",
         subtitle: "Weight Calc",
@@ -83,18 +87,21 @@ class FieldToolsScreen extends StatelessWidget {
         icon: Icons.camera_enhance_rounded,
         onTap: controller.openCamera,
       ),
+
       ToolCard(
         title: "Site Diary",
         subtitle: "Daily Log",
         icon: Icons.edit_note_rounded,
         onTap: controller.openSiteDiary,
       ),
+
       ToolCard(
         title: "CAD View",
         subtitle: "DWG/DXF",
         icon: Icons.view_in_ar_rounded,
         onTap: controller.openCadViewer,
       ),
+
       ToolCard(
         title: "Sun Path",
         subtitle: "Orientation",
@@ -105,6 +112,7 @@ class FieldToolsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bgColor,
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -119,35 +127,43 @@ class FieldToolsScreen extends StatelessWidget {
           ),
         ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(24),
+
         child: Column(
           children: [
             _buildHeader(),
+
             const SizedBox(height: 30),
 
-            /// Desktop → horizontal toolbar
+            /// Desktop Layout → Horizontal Tool Bar
             if (isDesktop)
               SizedBox(
                 height: 110,
+
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: tools.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) => tools[index],
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    return tools[index];
+                  },
                 ),
               )
-            /// Mobile + Tablet → Grid
+            /// Mobile + Tablet Layout → Grid
             else
               Expanded(
                 child: GridView.builder(
                   itemCount: tools.length,
+
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
                     mainAxisSpacing: 18,
                     crossAxisSpacing: 18,
                     childAspectRatio: 1,
                   ),
+
                   itemBuilder: (context, index) {
                     return tools[index];
                   },
@@ -170,7 +186,9 @@ class FieldToolsScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+
         const SizedBox(height: 8),
+
         Text(
           "Digital instruments for civil engineering tasks",
           textAlign: TextAlign.center,

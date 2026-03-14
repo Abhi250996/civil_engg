@@ -77,6 +77,77 @@ top view layout
 });
 
 /* ==============================
+   AI CIVIL CHATBOT
+============================== */
+
+app.post("/ai-chat", async (req, res) => {
+  try {
+    const userMessage = req.body.message;
+
+    console.log("AI Chat Request:", userMessage);
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o-mini",
+
+        messages: [
+          {
+            role: "system",
+            content: `
+You are a professional civil engineering assistant.
+
+Help with:
+- Concrete calculations
+- Structural engineering
+- Construction methods
+- Steel reinforcement
+- Site problems
+- Engineering formulas
+- Civil engineering standards
+
+Explain answers clearly like an experienced site engineer.
+`,
+          },
+
+          {
+            role: "user",
+            content: userMessage,
+          },
+        ],
+
+        temperature: 0.3,
+      },
+
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_KEY}`,
+        },
+      }
+    );
+
+    const aiReply = response.data.choices[0].message.content;
+
+    res.json({
+      reply: aiReply,
+    });
+
+  } catch (error) {
+
+    console.log("AI CHAT ERROR");
+
+    if (error.response) {
+      console.log(error.response.data);
+      res.status(500).json(error.response.data);
+    } else {
+      console.log(error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+/* ==============================
    SERVER START
 ============================== */
 

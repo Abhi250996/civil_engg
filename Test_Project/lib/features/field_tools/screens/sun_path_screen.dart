@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 
 class SunPathScreen extends StatefulWidget {
   const SunPathScreen({super.key});
@@ -9,6 +10,11 @@ class SunPathScreen extends StatefulWidget {
 }
 
 class _SunPathScreenState extends State<SunPathScreen> {
+  /// THEME
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color accentBlue = Color(0xFF3B82F6);
+  static const Color bgColor = Color(0xFFF8FAFC);
+
   final TextEditingController latitudeController = TextEditingController();
   final TextEditingController longitudeController = TextEditingController();
 
@@ -35,9 +41,7 @@ class _SunPathScreenState extends State<SunPathScreen> {
   }
 
   void calculateSunPosition() {
-    /// NOTE:
-    /// Placeholder values.
-    /// Later you can connect solar calculation formulas.
+    /// placeholder values
     setState(() {
       sunrise = "06:12 AM";
       sunset = "06:45 PM";
@@ -46,7 +50,7 @@ class _SunPathScreenState extends State<SunPathScreen> {
     });
   }
 
-  Widget buildInputField(
+  Widget inputField(
     String label,
     TextEditingController controller,
     String hint,
@@ -57,33 +61,47 @@ class _SunPathScreenState extends State<SunPathScreen> {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
-  Widget buildResultCard(String title, String value) {
+  Widget resultCard(String title, String value) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
         margin: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Colors.orange.shade50,
+          color: primaryBlue,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange.shade200),
         ),
         child: Column(
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text(value, style: const TextStyle(fontSize: 18)),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget buildSunDiagram() {
+  Widget sunDiagram() {
     return Container(
       height: 220,
       decoration: BoxDecoration(
@@ -93,7 +111,7 @@ class _SunPathScreenState extends State<SunPathScreen> {
       ),
       child: const Center(
         child: Text(
-          "Solar Path Diagram\n(Visual Orientation Placeholder)",
+          "Solar Path Diagram\n(Visualization Placeholder)",
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 16),
         ),
@@ -101,7 +119,7 @@ class _SunPathScreenState extends State<SunPathScreen> {
     );
   }
 
-  Widget buildOrientationGuide() {
+  Widget orientationGuide() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -127,79 +145,111 @@ class _SunPathScreenState extends State<SunPathScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+    final formattedDate = DateFormat('dd-MM-yyyy').format(selectedDate);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("Sun Path Analyzer")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+    Widget content = Column(
+      children: [
+        /// LAT + LNG
+        Row(
           children: [
-            /// LOCATION INPUT
-            buildInputField("Latitude", latitudeController, "Example: 28.6139"),
-            const SizedBox(height: 15),
-            buildInputField(
-              "Longitude",
-              longitudeController,
-              "Example: 77.2090",
+            Expanded(
+              child: inputField("Latitude", latitudeController, "28.6139"),
             ),
-
-            const SizedBox(height: 20),
-
-            /// DATE PICKER
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "Date: $formattedDate",
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: pickDate,
-                  child: const Text("Select Date"),
-                ),
-              ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: inputField("Longitude", longitudeController, "77.2090"),
             ),
-
-            const SizedBox(height: 25),
-
-            /// CALCULATE BUTTON
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: calculateSunPosition,
-                child: const Text("Calculate Sun Position"),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            /// RESULT CARDS
-            Row(
-              children: [
-                buildResultCard("Sunrise", sunrise),
-                buildResultCard("Sunset", sunset),
-              ],
-            ),
-            Row(
-              children: [
-                buildResultCard("Azimuth", azimuth),
-                buildResultCard("Elevation", elevation),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            /// SUN DIAGRAM
-            buildSunDiagram(),
-
-            const SizedBox(height: 30),
-
-            /// ORIENTATION GUIDE
-            buildOrientationGuide(),
           ],
         ),
+
+        const SizedBox(height: 20),
+
+        /// DATE
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                "Date: $formattedDate",
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: pickDate,
+              style: ElevatedButton.styleFrom(backgroundColor: accentBlue),
+              child: const Text(
+                "Select Date",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        /// CALCULATE
+        SizedBox(
+          width: 300,
+          child: ElevatedButton(
+            onPressed: calculateSunPosition,
+            style: ElevatedButton.styleFrom(backgroundColor: accentBlue),
+            child: const Text(
+              "Calculate Sun Position",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 25),
+
+        /// RESULTS
+        Row(
+          children: [
+            resultCard("Sunrise", sunrise),
+            resultCard("Sunset", sunset),
+          ],
+        ),
+
+        Row(
+          children: [
+            resultCard("Azimuth", azimuth),
+            resultCard("Elevation", elevation),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        /// DIAGRAM + GUIDE
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: sunDiagram()),
+            const SizedBox(width: 10),
+            Expanded(child: orientationGuide()),
+          ],
+        ),
+      ],
+    );
+
+    return Scaffold(
+      backgroundColor: bgColor,
+
+      appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: primaryBlue,
+        title: const Text(
+          "SUN PATH ANALYZER",
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+
+        /// WEB / DESKTOP → NO SCROLL
+        child: kIsWeb
+            ? content
+            /// MOBILE → SCROLL
+            : SingleChildScrollView(child: content),
       ),
     );
   }

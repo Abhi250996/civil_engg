@@ -8,6 +8,11 @@ class ConcreteCalcScreen extends StatefulWidget {
 }
 
 class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
+  /// THEME
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color accentBlue = Color(0xFF3B82F6);
+  static const Color bgColor = Color(0xFFF8FAFC);
+
   String structureType = "Slab";
   String mixRatio = "1:2:4";
   String unit = "Meter";
@@ -31,21 +36,16 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
     "1:3:6": [1, 3, 6],
   };
 
-  /// Convert to meters
   double convertToMeters(double value) {
     switch (unit) {
       case "Feet":
         return value * 0.3048;
-
       case "Inch":
         return value * 0.0254;
-
       case "Yard":
         return value * 0.9144;
-
       case "Centimeter":
         return value / 100;
-
       default:
         return value;
     }
@@ -58,21 +58,13 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
     double d = convertToMeters(double.tryParse(depth.text) ?? 0);
     double s = double.tryParse(steps.text) ?? 0;
 
-    /// STRUCTURE TYPES
-
     switch (structureType) {
       case "Slab":
         volume = l * w * d;
         break;
 
       case "Beam":
-        volume = l * w * h;
-        break;
-
       case "Column":
-        volume = l * w * h;
-        break;
-
       case "Footing":
         volume = l * w * h;
         break;
@@ -86,7 +78,6 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
         break;
     }
 
-    /// DRY VOLUME
     double dryVolume = volume * 1.54;
 
     var ratio = ratios[mixRatio]!;
@@ -98,9 +89,7 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
     double sandVol = dryVolume * ratio[1] / total;
     double aggVol = dryVolume * ratio[2] / total;
 
-    /// Cement bags (50kg bag)
     cement = cementVol * 1440 / 50;
-
     sand = sandVol;
     aggregate = aggVol;
 
@@ -126,28 +115,42 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
     return TextField(
       controller: c,
       keyboardType: TextInputType.number,
-
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
   Widget resultTile(String label, String value) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-
-        child: Column(
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-
-            const SizedBox(height: 6),
-
-            Text(value, style: const TextStyle(fontSize: 18)),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: primaryBlue,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -157,13 +160,17 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
       case "Slab":
         return Column(
           children: [
-            field(length, "Length ($unit)"),
-            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: field(length, "Length ($unit)")),
+                const SizedBox(width: 10),
+                Expanded(child: field(width, "Width ($unit)")),
+              ],
+            ),
 
-            field(width, "Width ($unit)"),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            field(depth, "Thickness ($unit)"),
+            Row(children: [Expanded(child: field(depth, "Thickness ($unit)"))]),
           ],
         );
 
@@ -172,29 +179,40 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
       case "Footing":
         return Column(
           children: [
-            field(length, "Length ($unit)"),
-            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: field(length, "Length ($unit)")),
+                const SizedBox(width: 10),
+                Expanded(child: field(width, "Width ($unit)")),
+              ],
+            ),
 
-            field(width, "Width ($unit)"),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            field(height, "Height ($unit)"),
+            Row(children: [Expanded(child: field(height, "Height ($unit)"))]),
           ],
         );
 
       case "Staircase":
         return Column(
           children: [
-            field(length, "Step Length ($unit)"),
-            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: field(length, "Step Length ($unit)")),
+                const SizedBox(width: 10),
+                Expanded(child: field(width, "Step Width ($unit)")),
+              ],
+            ),
 
-            field(width, "Step Width ($unit)"),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            field(height, "Step Height ($unit)"),
-            const SizedBox(height: 10),
-
-            field(steps, "Number of Steps"),
+            Row(
+              children: [
+                Expanded(child: field(height, "Step Height ($unit)")),
+                const SizedBox(width: 10),
+                Expanded(child: field(steps, "Steps")),
+              ],
+            ),
           ],
         );
 
@@ -206,118 +224,145 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Concrete Calculator")),
+      backgroundColor: bgColor,
+
+      appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: primaryBlue,
+        elevation: 0,
+        title: const Text(
+          "CONCRETE CALCULATOR",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
 
         child: Column(
           children: [
-            /// STRUCTURE TYPE
-            DropdownButtonFormField(
-              value: structureType,
+            /// MAIN CARD
+            Container(
+              padding: const EdgeInsets.all(18),
 
-              decoration: const InputDecoration(
-                labelText: "Structure Type",
-                border: OutlineInputBorder(),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
               ),
 
-              items: const [
-                DropdownMenuItem(value: "Slab", child: Text("Slab")),
-
-                DropdownMenuItem(value: "Beam", child: Text("Beam")),
-
-                DropdownMenuItem(value: "Column", child: Text("Column")),
-
-                DropdownMenuItem(value: "Footing", child: Text("Footing")),
-
-                DropdownMenuItem(value: "Staircase", child: Text("Staircase")),
-
-                DropdownMenuItem(
-                  value: "Plain Volume",
-                  child: Text("Plain Volume"),
-                ),
-              ],
-
-              onChanged: (v) {
-                setState(() {
-                  structureType = v!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            /// UNIT SELECTOR
-            DropdownButtonFormField(
-              value: unit,
-
-              decoration: const InputDecoration(
-                labelText: "Measurement Unit",
-                border: OutlineInputBorder(),
-              ),
-
-              items: units
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-
-              onChanged: (v) {
-                setState(() {
-                  unit = v!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            /// MIX RATIO
-            DropdownButtonFormField(
-              value: mixRatio,
-
-              decoration: const InputDecoration(
-                labelText: "Concrete Mix Ratio",
-                border: OutlineInputBorder(),
-              ),
-
-              items: ratios.keys
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-
-              onChanged: (v) {
-                setState(() {
-                  mixRatio = v!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            /// INPUTS
-            structureInputs(),
-
-            const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: calculate,
-                    child: const Text("CALCULATE"),
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: resetFields,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
+              child: Column(
+                children: [
+                  DropdownButtonFormField(
+                    initialValue: structureType,
+                    decoration: const InputDecoration(
+                      labelText: "Structure Type",
+                      border: OutlineInputBorder(),
                     ),
-                    child: const Text("RESET"),
+                    items: const [
+                      DropdownMenuItem(value: "Slab", child: Text("Slab")),
+                      DropdownMenuItem(value: "Beam", child: Text("Beam")),
+                      DropdownMenuItem(value: "Column", child: Text("Column")),
+                      DropdownMenuItem(
+                        value: "Footing",
+                        child: Text("Footing"),
+                      ),
+                      DropdownMenuItem(
+                        value: "Staircase",
+                        child: Text("Staircase"),
+                      ),
+                      DropdownMenuItem(
+                        value: "Plain Volume",
+                        child: Text("Plain Volume"),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        structureType = v!;
+                      });
+                    },
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 14),
+
+                  DropdownButtonFormField(
+                    initialValue: unit,
+                    decoration: const InputDecoration(
+                      labelText: "Measurement Unit",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: units
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
+                    onChanged: (v) {
+                      setState(() {
+                        unit = v!;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  DropdownButtonFormField(
+                    initialValue: mixRatio,
+                    decoration: const InputDecoration(
+                      labelText: "Concrete Mix Ratio",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ratios.keys
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
+                    onChanged: (v) {
+                      setState(() {
+                        mixRatio = v!;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  structureInputs(),
+
+                  const SizedBox(height: 18),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 150,
+                        child: ElevatedButton(
+                          onPressed: calculate,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentBlue,
+                          ),
+                          child: const Text(
+                            "CALCULATE",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      SizedBox(
+                        width: 150,
+                        child: ElevatedButton(
+                          onPressed: resetFields,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                          ),
+                          child: const Text("RESET"),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 25),
