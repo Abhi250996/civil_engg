@@ -1,178 +1,90 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
-
 import '../controllers/field_tools_controller.dart';
 
-class SiteDiaryScreen extends StatefulWidget {
-  const SiteDiaryScreen({super.key});
-
-  @override
-  State<SiteDiaryScreen> createState() => _SiteDiaryScreenState();
-}
-
-class _SiteDiaryScreenState extends State<SiteDiaryScreen> {
-  final controller = Get.find<FieldToolsController>();
-
-  DateTime selectedDate = DateTime.now();
-
-  final weatherOptions = ["Sunny", "Cloudy", "Rainy", "Storm"];
-
-  Future<void> pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
-
-  Widget inputField(
-    String label,
-    TextEditingController controller, {
-    int lines = 1,
-  }) {
-    return TextField(
-      controller: controller,
-      maxLines: lines,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-    );
-  }
+class SiteDiaryListScreen extends StatelessWidget {
+  const SiteDiaryListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+    final controller = Get.find<FieldToolsController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Site Diary")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            /// DATE
-            Row(
-              children: [
-                Expanded(child: Text("Date: $formattedDate")),
-                ElevatedButton(
-                  onPressed: pickDate,
-                  child: const Text("Select Date"),
-                ),
-              ],
-            ),
+      appBar: AppBar(title: const Text("Saved Site Diary")),
 
-            const SizedBox(height: 20),
+      body: Obx(() {
+        if (controller.diaryEntries.isEmpty) {
+          return const Center(child: Text("No entries saved"));
+        }
 
-            /// PROJECT
-            inputField("Project Name", controller.projectController),
+        return ListView.builder(
+          itemCount: controller.diaryEntries.length,
 
-            const SizedBox(height: 20),
+          itemBuilder: (context, index) {
+            final entry = controller.diaryEntries[index];
 
-            /// ENGINEER
-            inputField("Engineer / Supervisor", controller.engineerController),
+            return Card(
+              margin: const EdgeInsets.all(10),
 
-            const SizedBox(height: 20),
+              child: ListTile(
+                title: Text(entry["project"] ?? ""),
 
-            /// WEATHER
-            Obx(
-              () => DropdownButtonFormField(
-                value: controller.weather.value,
-                decoration: const InputDecoration(
-                  labelText: "Weather",
-                  border: OutlineInputBorder(),
-                ),
-                items: weatherOptions
-                    .map((w) => DropdownMenuItem(value: w, child: Text(w)))
-                    .toList(),
-                onChanged: (value) {
-                  controller.weather.value = value!;
+                subtitle: Text(entry["date"]),
+
+                trailing: const Icon(Icons.arrow_forward),
+
+                onTap: () {
+                  _showEntryDialog(entry);
                 },
               ),
-            ),
+            );
+          },
+        );
+      }),
+    );
+  }
 
-            const SizedBox(height: 20),
+  void _showEntryDialog(Map entry) {
+    Get.dialog(
+      AlertDialog(
+        title: Text(entry["project"]),
 
-            /// WORKERS
-            inputField("Number of Workers", controller.labourController),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
 
-            const SizedBox(height: 20),
+            children: [
+              Text("Engineer: ${entry["engineer"]}"),
+              Text("Weather: ${entry["weather"]}"),
+              Text("Workers: ${entry["workers"]}"),
 
-            /// WORK DONE
-            inputField("Work Done Today", controller.workController, lines: 3),
+              const SizedBox(height: 10),
 
-            const SizedBox(height: 20),
+              Text("Work Done:\n${entry["work"]}"),
 
-            /// ISSUES
-            inputField(
-              "Issues / Delays",
-              controller.issuesController,
-              lines: 3,
-            ),
+              const SizedBox(height: 10),
 
-            const SizedBox(height: 20),
+              Text("Issues:\n${entry["issues"]}"),
 
-            /// NOTES
-            inputField(
-              "Additional Notes",
-              controller.notesController,
-              lines: 3,
-            ),
+              const SizedBox(height: 10),
 
-            const SizedBox(height: 20),
+              Text("Notes:\n${entry["notes"]}"),
 
-            /// PHOTO
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: controller.openCamera,
-                  child: const Text("Capture Photo"),
-                ),
-                const SizedBox(width: 20),
+              const SizedBox(height: 10),
 
-                Obx(() {
-                  final image = controller.capturedImage.value;
-                  if (image == null) return const SizedBox();
+              Text("Location:\n${entry["location"]}"),
 
-                  return SizedBox(height: 60, child: Image.file(image));
-                }),
-              ],
-            ),
+              const SizedBox(height: 10),
 
-            const SizedBox(height: 20),
-
-            /// LOCATION
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: controller.captureLocation,
-                  child: const Text("Capture Location"),
-                ),
-                const SizedBox(width: 20),
-
-                Expanded(child: Obx(() => Text(controller.location.value))),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            /// SAVE
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: controller.saveSiteDiaryEntry,
-                child: const Text("Save Site Diary Entry"),
-              ),
-            ),
-          ],
+              if (entry["image"] != null)
+                Image.file(entry["image"], height: 120),
+            ],
+          ),
         ),
+
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Close")),
+        ],
       ),
     );
   }

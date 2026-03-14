@@ -12,27 +12,53 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
   final TextEditingController barsController = TextEditingController();
 
   String selectedDiameter = "12";
+  String selectedUnit = "Meter";
 
   double weightPerMeter = 0;
   double totalWeight = 0;
+  double lengthInMeters = 0;
 
   final List<String> diameters = ["6", "8", "10", "12", "16", "20", "25", "32"];
+
+  final List<String> units = ["Meter", "Feet", "Inch", "Yard", "Centimeter"];
 
   /// Weight per meter formula
   double calculateWeightPerMeter(double diameter) {
     return (diameter * diameter) / 162;
   }
 
+  /// Convert length to meters
+  double convertToMeters(double length) {
+    switch (selectedUnit) {
+      case "Feet":
+        return length * 0.3048;
+
+      case "Inch":
+        return length * 0.0254;
+
+      case "Yard":
+        return length * 0.9144;
+
+      case "Centimeter":
+        return length / 100;
+
+      default:
+        return length;
+    }
+  }
+
   void calculate() {
-    final length = double.tryParse(lengthController.text) ?? 0;
+    final lengthInput = double.tryParse(lengthController.text) ?? 0;
     final bars = int.tryParse(barsController.text) ?? 0;
     final dia = double.parse(selectedDiameter);
 
+    final lengthMeters = convertToMeters(lengthInput);
     final wpm = calculateWeightPerMeter(dia);
 
     setState(() {
+      lengthInMeters = lengthMeters;
       weightPerMeter = wpm;
-      totalWeight = wpm * length * bars;
+      totalWeight = wpm * lengthMeters * bars;
     });
   }
 
@@ -121,14 +147,14 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Bar Bending Schedule (Preview)",
+            "Bar Bending Schedule Guide",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           SizedBox(height: 10),
           Text("• Use correct bend allowance."),
           Text("• Check lap length for splicing."),
-          Text("• Verify cover requirements."),
-          Text("• Ensure structural drawing compliance."),
+          Text("• Verify concrete cover."),
+          Text("• Follow structural drawing details."),
         ],
       ),
     );
@@ -161,8 +187,27 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
 
             const SizedBox(height: 20),
 
+            /// UNIT
+            DropdownButtonFormField<String>(
+              value: selectedUnit,
+              decoration: const InputDecoration(
+                labelText: "Length Unit",
+                border: OutlineInputBorder(),
+              ),
+              items: units
+                  .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedUnit = value!;
+                });
+              },
+            ),
+
+            const SizedBox(height: 20),
+
             /// LENGTH
-            inputField("Bar Length (m)", lengthController, "Example: 12"),
+            inputField("Bar Length", lengthController, "Example: 12"),
 
             const SizedBox(height: 20),
 
@@ -171,7 +216,7 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
 
             const SizedBox(height: 25),
 
-            /// CALCULATE BUTTON
+            /// CALCULATE
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -187,13 +232,21 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
               children: [
                 resultCard(
                   "Weight / Meter",
-                  "${weightPerMeter.toStringAsFixed(3)} kg",
+                  "${weightPerMeter.toStringAsFixed(3)} kg/m",
                 ),
                 resultCard(
                   "Total Weight",
                   "${totalWeight.toStringAsFixed(2)} kg",
                 ),
               ],
+            ),
+
+            const SizedBox(height: 15),
+
+            /// Converted length display
+            Text(
+              "Length in meters: ${lengthInMeters.toStringAsFixed(3)} m",
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 30),

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/utils/validators.dart';
 
@@ -15,6 +16,9 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
   static const Color bgColor = Color(0xFFF8FAFC);
 
   String measurementType = "Coordinate Distance";
+  String unit = "Meter";
+
+  final units = ["Meter", "Feet", "Inch", "Yard", "Centimeter"];
 
   final TextEditingController x1 = TextEditingController();
   final TextEditingController y1 = TextEditingController();
@@ -34,52 +38,114 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
 
   double? result;
 
+  /// Convert input values to meters
+  double convertToMeters(double value) {
+    switch (unit) {
+      case "Feet":
+        return value * 0.3048;
+
+      case "Inch":
+        return value * 0.0254;
+
+      case "Yard":
+        return value * 0.9144;
+
+      case "Centimeter":
+        return value / 100;
+
+      default:
+        return value;
+    }
+  }
+
   void calculate() {
     if (!_formKey.currentState!.validate()) return;
 
     switch (measurementType) {
       case "Coordinate Distance":
-        double dx = double.parse(x2.text) - double.parse(x1.text);
-        double dy = double.parse(y2.text) - double.parse(y1.text);
-        result = (dx * dx + dy * dy).sqrt();
+        double dx =
+            convertToMeters(double.parse(x2.text)) -
+            convertToMeters(double.parse(x1.text));
+
+        double dy =
+            convertToMeters(double.parse(y2.text)) -
+            convertToMeters(double.parse(y1.text));
+
+        result = sqrt(dx * dx + dy * dy);
+
         break;
 
       case "Length":
-        result = double.parse(length.text);
+        result = convertToMeters(double.parse(length.text));
+
         break;
 
       case "Area":
-        result = double.parse(length.text) * double.parse(width.text);
+        double l = convertToMeters(double.parse(length.text));
+        double w = convertToMeters(double.parse(width.text));
+
+        result = l * w;
+
         break;
 
       case "Triangle Area":
-        double a = double.parse(sideA.text);
-        double b = double.parse(sideB.text);
-        double c = double.parse(sideC.text);
+        double a = convertToMeters(double.parse(sideA.text));
+        double b = convertToMeters(double.parse(sideB.text));
+        double c = convertToMeters(double.parse(sideC.text));
+
         double s = (a + b + c) / 2;
-        result = (s * (s - a) * (s - b) * (s - c)).sqrt();
+
+        result = sqrt(s * (s - a) * (s - b) * (s - c));
+
         break;
 
       case "Perimeter":
         result =
-            double.parse(sideA.text) +
-            double.parse(sideB.text) +
-            double.parse(sideC.text);
+            convertToMeters(double.parse(sideA.text)) +
+            convertToMeters(double.parse(sideB.text)) +
+            convertToMeters(double.parse(sideC.text));
+
         break;
 
       case "Slope":
         double r = double.parse(rise.text);
         double rn = double.parse(run.text);
+
         result = (r / rn) * 100;
+
         break;
 
       case "Volume":
-        result =
-            double.parse(length.text) *
-            double.parse(width.text) *
-            double.parse(height.text);
+        double l = convertToMeters(double.parse(length.text));
+        double w = convertToMeters(double.parse(width.text));
+        double h = convertToMeters(double.parse(height.text));
+
+        result = l * w * h;
+
         break;
     }
+
+    setState(() {});
+  }
+
+  void resetFields() {
+    x1.clear();
+    y1.clear();
+    x2.clear();
+    y2.clear();
+
+    length.clear();
+    width.clear();
+    height.clear();
+
+    sideA.clear();
+    sideB.clear();
+    sideC.clear();
+
+    rise.clear();
+    run.clear();
+
+    result = null;
 
     setState(() {});
   }
@@ -89,8 +155,9 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
       controller: c,
       keyboardType: TextInputType.number,
       validator: (v) => Validators.validateRequired(v, label),
+
       decoration: InputDecoration(
-        labelText: label,
+        labelText: "$label ($unit)",
         border: const OutlineInputBorder(),
       ),
     );
@@ -108,7 +175,9 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
                 Expanded(child: field(y1, "Y1")),
               ],
             ),
+
             const SizedBox(height: 10),
+
             Row(
               children: [
                 Expanded(child: field(x2, "X2")),
@@ -182,37 +251,71 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
+
       appBar: AppBar(title: const Text("Measurement Tool")),
+
       body: Padding(
         padding: const EdgeInsets.all(20),
+
         child: Form(
           key: _formKey,
+
           child: Column(
             children: [
               DropdownButtonFormField(
                 value: measurementType,
+
                 items: const [
                   DropdownMenuItem(
                     value: "Coordinate Distance",
                     child: Text("Coordinate Distance"),
                   ),
+
                   DropdownMenuItem(value: "Length", child: Text("Length")),
+
                   DropdownMenuItem(value: "Area", child: Text("Area")),
+
                   DropdownMenuItem(
                     value: "Triangle Area",
                     child: Text("Triangle Area"),
                   ),
+
                   DropdownMenuItem(
                     value: "Perimeter",
                     child: Text("Perimeter"),
                   ),
+
                   DropdownMenuItem(value: "Slope", child: Text("Slope (%)")),
+
                   DropdownMenuItem(value: "Volume", child: Text("Volume")),
                 ],
+
                 onChanged: (v) {
                   setState(() {
                     measurementType = v!;
                     result = null;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 12),
+
+              /// UNIT SELECTOR
+              DropdownButtonFormField(
+                value: unit,
+
+                decoration: const InputDecoration(
+                  labelText: "Measurement Unit",
+                  border: OutlineInputBorder(),
+                ),
+
+                items: units
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+
+                onChanged: (v) {
+                  setState(() {
+                    unit = v!;
                   });
                 },
               ),
@@ -223,12 +326,27 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
 
               const SizedBox(height: 20),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: calculate,
-                  child: const Text("CALCULATE"),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: calculate,
+                      child: const Text("CALCULATE"),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: resetFields,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                      ),
+                      child: const Text("RESET"),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 20),
@@ -236,17 +354,21 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
               if (result != null)
                 Container(
                   padding: const EdgeInsets.all(20),
+
                   decoration: BoxDecoration(
                     color: primaryBlue,
                     borderRadius: BorderRadius.circular(12),
                   ),
+
                   child: Column(
                     children: [
                       const Text(
                         "RESULT",
                         style: TextStyle(color: Colors.white70),
                       ),
+
                       const SizedBox(height: 8),
+
                       Text(
                         result!.toStringAsFixed(3),
                         style: const TextStyle(
@@ -254,6 +376,20 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Text(
+                        measurementType == "Area"
+                            ? "Square Meters"
+                            : measurementType == "Volume"
+                            ? "Cubic Meters"
+                            : measurementType == "Slope"
+                            ? "%"
+                            : "Meters",
+
+                        style: const TextStyle(color: Colors.white70),
                       ),
                     ],
                   ),
@@ -264,12 +400,4 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
       ),
     );
   }
-}
-
-extension on double {
-  double sqrt() => (this >= 0) ? (this).toDouble().pow(0.5) : 0;
-}
-
-extension on num {
-  double pow(num exponent) => (this as double).pow(exponent);
 }

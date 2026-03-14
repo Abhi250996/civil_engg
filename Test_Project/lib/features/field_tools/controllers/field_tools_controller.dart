@@ -10,20 +10,31 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/route_constants.dart';
 
 class FieldToolsController extends GetxController {
+  /// ======================================================
+  /// TEXT CONTROLLERS (SITE DIARY)
+  /// ======================================================
+
   final TextEditingController projectController = TextEditingController();
   final TextEditingController engineerController = TextEditingController();
   final TextEditingController labourController = TextEditingController();
   final TextEditingController workController = TextEditingController();
   final TextEditingController issuesController = TextEditingController();
   final TextEditingController notesController = TextEditingController();
-  final RxBool showLaser = false.obs;
 
-  /// =============================
+  /// ======================================================
+  /// DIARY STORAGE
+  /// ======================================================
+
+  final RxList<Map<String, dynamic>> diaryEntries =
+      <Map<String, dynamic>>[].obs;
+
+  /// ======================================================
   /// LEVEL TOOL
-  /// =============================
+  /// ======================================================
 
   final RxDouble levelX = 0.0.obs;
   final RxDouble levelY = 0.0.obs;
+  final RxBool showLaser = false.obs;
 
   StreamSubscription<AccelerometerEvent>? sensorSub;
 
@@ -46,16 +57,29 @@ class FieldToolsController extends GetxController {
     sensorSub?.cancel();
   }
 
-  /// =============================
+  void toggleLaser() {
+    showLaser.value = !showLaser.value;
+  }
+
+  void resetCalibration() {
+    levelX.value = 0;
+    levelY.value = 0;
+  }
+
+  void holdMeasurement() {
+    Get.snackbar("Measurement", "Angle locked");
+  }
+
+  /// ======================================================
   /// GPS TOOL
-  /// =============================
+  /// ======================================================
 
   Future<void> openGpsTool() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
-        Get.snackbar("Location Disabled", "Please enable GPS services");
+        Get.snackbar("Location Disabled", "Enable GPS services");
         return;
       }
 
@@ -86,63 +110,9 @@ class FieldToolsController extends GetxController {
     }
   }
 
-  /// =============================
-  /// UNIT CONVERTER
-  /// =============================
-
-  void openUnitConverter() {
-    Get.toNamed(RouteConstants.unitConverter);
-  }
-
-  /// =============================
-  /// CONCRETE CALCULATOR
-  /// =============================
-
-  double calculateConcreteVolume(double length, double width, double depth) {
-    return length * width * depth;
-  }
-
-  void openConcreteCalc() {
-    Get.toNamed(RouteConstants.concreteCalc);
-  }
-
-  /// =============================
-  /// STEEL CALCULATOR
-  /// =============================
-
-  double calculateSteelWeight(double diameter, double length) {
-    return (diameter * diameter / 162) * length;
-  }
-
-  void openSteelCalc() {
-    Get.toNamed(RouteConstants.steelCalc);
-  }
-
-  /// =============================
-  /// SLOPE CALCULATOR
-  /// =============================
-
-  double calculateSlope(double rise, double run) {
-    if (run == 0) return 0;
-    return rise / run;
-  }
-
-  void toggleLaser() {
-    showLaser.value = !showLaser.value;
-  }
-
-  void resetCalibration() {
-    levelX.value = 0;
-    levelY.value = 0;
-  }
-
-  void holdMeasurement() {
-    Get.snackbar("Measurement", "Angle locked");
-  }
-
-  /// =============================
+  /// ======================================================
   /// CAMERA TOOL
-  /// =============================
+  /// ======================================================
 
   final Rx<File?> capturedImage = Rx<File?>(null);
 
@@ -158,24 +128,19 @@ class FieldToolsController extends GetxController {
       if (image != null) {
         capturedImage.value = File(image.path);
 
-        Get.snackbar("Photo Captured", "Saved to site media gallery");
+        Get.snackbar("Photo Captured", "Photo saved successfully");
       }
     } catch (e) {
       Get.snackbar("Camera Error", e.toString());
     }
   }
 
-  /// =============================
-  /// SITE DIARY STATE
-  /// =============================
+  /// ======================================================
+  /// LOCATION CAPTURE
+  /// ======================================================
 
   final RxString location = "Location not captured".obs;
-
   final RxString weather = "Sunny".obs;
-
-  /// =============================
-  /// CAPTURE LOCATION
-  /// =============================
 
   Future<void> captureLocation() async {
     try {
@@ -199,9 +164,9 @@ class FieldToolsController extends GetxController {
     }
   }
 
-  /// =============================
+  /// ======================================================
   /// SAVE SITE DIARY ENTRY
-  /// =============================
+  /// ======================================================
 
   void saveSiteDiaryEntry() {
     final entry = {
@@ -213,21 +178,30 @@ class FieldToolsController extends GetxController {
       "issues": issuesController.text,
       "notes": notesController.text,
       "location": location.value,
-      "photo": capturedImage.value?.path,
-      "timestamp": DateTime.now().toIso8601String(),
+      "photo": capturedImage.value,
+      "timestamp": DateTime.now(),
     };
 
-    /// DEBUG (Later send to Firebase)
-    print("Site Diary Entry: $entry");
+    diaryEntries.add(entry);
 
-    Get.snackbar("Saved", "Site diary entry saved successfully");
+    Get.snackbar("Saved", "Site diary entry saved");
 
     clearDiaryForm();
   }
 
-  /// =============================
+  /// ======================================================
+  /// DELETE ENTRY
+  /// ======================================================
+
+  void deleteEntry(int index) {
+    diaryEntries.removeAt(index);
+
+    Get.snackbar("Deleted", "Diary entry removed");
+  }
+
+  /// ======================================================
   /// CLEAR FORM
-  /// =============================
+  /// ======================================================
 
   void clearDiaryForm() {
     projectController.clear();
@@ -238,12 +212,26 @@ class FieldToolsController extends GetxController {
     notesController.clear();
 
     capturedImage.value = null;
+
     location.value = "Location not captured";
+    weather.value = "Sunny";
   }
 
-  /// =============================
+  /// ======================================================
   /// NAVIGATION
-  /// =============================
+  /// ======================================================
+
+  void openUnitConverter() {
+    Get.toNamed(RouteConstants.unitConverter);
+  }
+
+  void openConcreteCalc() {
+    Get.toNamed(RouteConstants.concreteCalc);
+  }
+
+  void openSteelCalc() {
+    Get.toNamed(RouteConstants.steelCalc);
+  }
 
   void openSiteDiary() {
     Get.toNamed(RouteConstants.siteDiary);
@@ -257,13 +245,21 @@ class FieldToolsController extends GetxController {
     Get.toNamed(RouteConstants.sunPath);
   }
 
-  /// =============================
+  /// ======================================================
   /// CLEANUP
-  /// =============================
+  /// ======================================================
 
   @override
   void onClose() {
     sensorSub?.cancel();
+
+    projectController.dispose();
+    engineerController.dispose();
+    labourController.dispose();
+    workController.dispose();
+    issuesController.dispose();
+    notesController.dispose();
+
     super.onClose();
   }
 }

@@ -10,6 +10,7 @@ class ConcreteCalcScreen extends StatefulWidget {
 class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
   String structureType = "Slab";
   String mixRatio = "1:2:4";
+  String unit = "Meter";
 
   final length = TextEditingController();
   final width = TextEditingController();
@@ -22,17 +23,39 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
   double sand = 0;
   double aggregate = 0;
 
+  final units = ["Meter", "Feet", "Inch", "Yard", "Centimeter"];
+
   final ratios = {
     "1:2:4": [1, 2, 4],
     "1:1.5:3": [1, 1.5, 3],
     "1:3:6": [1, 3, 6],
   };
 
+  /// Convert to meters
+  double convertToMeters(double value) {
+    switch (unit) {
+      case "Feet":
+        return value * 0.3048;
+
+      case "Inch":
+        return value * 0.0254;
+
+      case "Yard":
+        return value * 0.9144;
+
+      case "Centimeter":
+        return value / 100;
+
+      default:
+        return value;
+    }
+  }
+
   void calculate() {
-    double l = double.tryParse(length.text) ?? 0;
-    double w = double.tryParse(width.text) ?? 0;
-    double h = double.tryParse(height.text) ?? 0;
-    double d = double.tryParse(depth.text) ?? 0;
+    double l = convertToMeters(double.tryParse(length.text) ?? 0);
+    double w = convertToMeters(double.tryParse(width.text) ?? 0);
+    double h = convertToMeters(double.tryParse(height.text) ?? 0);
+    double d = convertToMeters(double.tryParse(depth.text) ?? 0);
     double s = double.tryParse(steps.text) ?? 0;
 
     /// STRUCTURE TYPES
@@ -70,13 +93,31 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
 
     double total =
         ratio[0].toDouble() + ratio[1].toDouble() + ratio[2].toDouble();
+
     double cementVol = dryVolume * ratio[0] / total;
     double sandVol = dryVolume * ratio[1] / total;
     double aggVol = dryVolume * ratio[2] / total;
 
+    /// Cement bags (50kg bag)
     cement = cementVol * 1440 / 50;
+
     sand = sandVol;
     aggregate = aggVol;
+
+    setState(() {});
+  }
+
+  void resetFields() {
+    length.clear();
+    width.clear();
+    height.clear();
+    depth.clear();
+    steps.clear();
+
+    volume = 0;
+    cement = 0;
+    sand = 0;
+    aggregate = 0;
 
     setState(() {});
   }
@@ -85,6 +126,7 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
     return TextField(
       controller: c,
       keyboardType: TextInputType.number,
+
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
@@ -96,10 +138,13 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
+
         child: Column(
           children: [
             Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+
             const SizedBox(height: 6),
+
             Text(value, style: const TextStyle(fontSize: 18)),
           ],
         ),
@@ -112,11 +157,13 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
       case "Slab":
         return Column(
           children: [
-            field(length, "Length (m)"),
+            field(length, "Length ($unit)"),
             const SizedBox(height: 10),
-            field(width, "Width (m)"),
+
+            field(width, "Width ($unit)"),
             const SizedBox(height: 10),
-            field(depth, "Thickness (m)"),
+
+            field(depth, "Thickness ($unit)"),
           ],
         );
 
@@ -125,29 +172,34 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
       case "Footing":
         return Column(
           children: [
-            field(length, "Length (m)"),
+            field(length, "Length ($unit)"),
             const SizedBox(height: 10),
-            field(width, "Width (m)"),
+
+            field(width, "Width ($unit)"),
             const SizedBox(height: 10),
-            field(height, "Height (m)"),
+
+            field(height, "Height ($unit)"),
           ],
         );
 
       case "Staircase":
         return Column(
           children: [
-            field(length, "Step Length"),
+            field(length, "Step Length ($unit)"),
             const SizedBox(height: 10),
-            field(width, "Step Width"),
+
+            field(width, "Step Width ($unit)"),
             const SizedBox(height: 10),
-            field(height, "Step Height"),
+
+            field(height, "Step Height ($unit)"),
             const SizedBox(height: 10),
+
             field(steps, "Number of Steps"),
           ],
         );
 
       default:
-        return field(length, "Value");
+        return field(length, "Value ($unit)");
     }
   }
 
@@ -164,21 +216,29 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
             /// STRUCTURE TYPE
             DropdownButtonFormField(
               value: structureType,
+
               decoration: const InputDecoration(
                 labelText: "Structure Type",
                 border: OutlineInputBorder(),
               ),
+
               items: const [
                 DropdownMenuItem(value: "Slab", child: Text("Slab")),
+
                 DropdownMenuItem(value: "Beam", child: Text("Beam")),
+
                 DropdownMenuItem(value: "Column", child: Text("Column")),
+
                 DropdownMenuItem(value: "Footing", child: Text("Footing")),
+
                 DropdownMenuItem(value: "Staircase", child: Text("Staircase")),
+
                 DropdownMenuItem(
                   value: "Plain Volume",
                   child: Text("Plain Volume"),
                 ),
               ],
+
               onChanged: (v) {
                 setState(() {
                   structureType = v!;
@@ -188,16 +248,41 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
 
             const SizedBox(height: 20),
 
+            /// UNIT SELECTOR
+            DropdownButtonFormField(
+              value: unit,
+
+              decoration: const InputDecoration(
+                labelText: "Measurement Unit",
+                border: OutlineInputBorder(),
+              ),
+
+              items: units
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                  .toList(),
+
+              onChanged: (v) {
+                setState(() {
+                  unit = v!;
+                });
+              },
+            ),
+
+            const SizedBox(height: 20),
+
             /// MIX RATIO
             DropdownButtonFormField(
               value: mixRatio,
+
               decoration: const InputDecoration(
-                labelText: "Mix Ratio",
+                labelText: "Concrete Mix Ratio",
                 border: OutlineInputBorder(),
               ),
+
               items: ratios.keys
                   .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
+
               onChanged: (v) {
                 setState(() {
                   mixRatio = v!;
@@ -212,15 +297,30 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
 
             const SizedBox(height: 20),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: calculate,
-                child: const Text("CALCULATE MATERIAL"),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: calculate,
+                    child: const Text("CALCULATE"),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: resetFields,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                    ),
+                    child: const Text("RESET"),
+                  ),
+                ),
+              ],
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
 
             if (volume > 0)
               Column(
