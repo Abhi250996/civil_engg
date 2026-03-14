@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'dart:math';
 
 class GpsToolScreen extends StatefulWidget {
   const GpsToolScreen({super.key});

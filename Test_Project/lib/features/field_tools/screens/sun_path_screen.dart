@@ -35,9 +35,6 @@ class _SunPathScreenState extends State<SunPathScreen> {
   }
 
   void calculateSunPosition() {
-    final lat = double.tryParse(latitudeController.text) ?? 0;
-    final lng = double.tryParse(longitudeController.text) ?? 0;
-
     /// NOTE:
     /// Placeholder values.
     /// Later you can connect solar calculation formulas.
