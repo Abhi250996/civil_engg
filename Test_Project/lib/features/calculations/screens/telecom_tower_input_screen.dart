@@ -14,6 +14,9 @@ class _TelecomTowerInputScreenState extends State<TelecomTowerInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -38,9 +41,25 @@ class _TelecomTowerInputScreenState extends State<TelecomTowerInputScreen> {
   String sectorCount = "3 Sector";
   String foundationType = "Pile Foundation";
 
+  /// DRAWING
   String scale = "1:100";
   String sheetSize = "A1";
   String detailLevel = "Construction";
+
+  @override
+  void dispose() {
+    projectNameController.dispose();
+    locationController.dispose();
+    heightController.dispose();
+    baseWidthController.dispose();
+    antennaLevelsController.dispose();
+    antennasPerLevelController.dispose();
+    antennaHeightController.dispose();
+    windSpeedController.dispose();
+    windPressureController.dispose();
+    foundationDepthController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,8 +78,8 @@ class _TelecomTowerInputScreenState extends State<TelecomTowerInputScreen> {
             children: [
               sectionTitle("Project Information"),
 
-              field(projectNameController, "Project Name"),
-              field(locationController, "Location"),
+              field(projectNameController, "Project Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
@@ -144,57 +163,90 @@ class _TelecomTowerInputScreenState extends State<TelecomTowerInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
 
                 child: ElevatedButton(
-                  child: const Text("Generate Telecom Tower Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                      },
+                          final data = {
+                            "project": {
+                              "name": projectNameController.text,
+                              "location": locationController.text,
+                            },
+                            "tower": {
+                              "type": towerType,
+                              "height": heightController.text,
+                              "baseWidth": baseWidthController.text,
+                              "antennaLevels": antennaLevelsController.text,
+                            },
+                            "antenna": {
+                              "antennasPerLevel":
+                                  antennasPerLevelController.text,
+                              "antennaHeight": antennaHeightController.text,
+                              "sector": sectorCount,
+                            },
+                            "wind": {
+                              "speed": windSpeedController.text,
+                              "pressure": windPressureController.text,
+                            },
+                            "foundation": {
+                              "type": foundationType,
+                              "depth": foundationDepthController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "tower": {
-                        "type": towerType,
-                        "height": heightController.text,
-                        "baseWidth": baseWidthController.text,
-                        "antennaLevels": antennaLevelsController.text,
-                      },
+                          try {
+                            final res = await controller
+                                .generateDrawingFromInputs(
+                                  type: "telecom",
+                                  inputData: data,
+                                );
 
-                      "antenna": {
-                        "antennasPerLevel": antennasPerLevelController.text,
-                        "antennaHeight": antennaHeightController.text,
-                        "sector": sectorCount,
-                      },
+                            setState(() => isLoading = false);
 
-                      "wind": {
-                        "speed": windSpeedController.text,
-                        "pressure": windPressureController.text,
-                      },
+                            Get.snackbar(
+                              res["success"] == true ? "Success" : "Error",
+                              res["message"] ?? "Something went wrong",
+                              backgroundColor: res["success"] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                              colorText: Colors.white,
+                            );
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "foundation": {
-                        "type": foundationType,
-                        "depth": foundationDepthController.text,
-                      },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
 
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "telecom",
-                      inputData: data,
-                    );
-                  },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Telecom Tower Drawing"),
                 ),
               ),
             ],
@@ -203,6 +255,8 @@ class _TelecomTowerInputScreenState extends State<TelecomTowerInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -214,13 +268,13 @@ class _TelecomTowerInputScreenState extends State<TelecomTowerInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
-        validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        validator: (v) => v == null || v.isEmpty ? "Required" : null,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -237,7 +291,7 @@ class _TelecomTowerInputScreenState extends State<TelecomTowerInputScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField(
+      child: DropdownButtonFormField<String>(
         value: value,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))

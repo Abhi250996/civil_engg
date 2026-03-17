@@ -14,6 +14,9 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -57,27 +60,21 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
-              /// PROJECT
               sectionTitle("Project"),
-
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
-              field(projectNameController, "Project Name"),
-              field(locationController, "Location"),
+              field(projectNameController, "Project Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// GEOMETRY
               sectionTitle("Wall Geometry"),
-
               field(heightController, "Wall Height (m)"),
               field(lengthController, "Wall Length (m)"),
               field(baseWidthController, "Base Width (m)"),
@@ -87,7 +84,6 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
 
               /// WALL TYPE
               sectionTitle("Wall Type"),
-
               dropdown("Retaining Wall Type", wallType, [
                 "Cantilever Wall",
                 "Gravity Wall",
@@ -99,7 +95,6 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
 
               /// SOIL
               sectionTitle("Soil Parameters"),
-
               field(soilWeightController, "Soil Unit Weight (kN/m³)"),
               field(frictionController, "Soil Friction Angle (°)"),
               field(soilBearingController, "Soil Bearing Capacity (kN/m²)"),
@@ -108,7 +103,6 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
 
               /// DRAINAGE
               sectionTitle("Drainage"),
-
               dropdown("Drain Type", drainType, [
                 "Weep Holes",
                 "Drain Pipe",
@@ -121,7 +115,6 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               field(concreteGradeController, "Concrete Grade"),
               field(steelGradeController, "Steel Grade"),
               field(seismicZoneController, "Seismic Zone"),
@@ -130,20 +123,17 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
                 "1:200",
               ], (v) => setState(() => scale = v!)),
-
               dropdown("Sheet Size", sheetSize, [
                 "A0",
                 "A1",
                 "A2",
                 "A3",
               ], (v) => setState(() => sheetSize = v!)),
-
               dropdown("Detail Level", detailLevel, [
                 "Concept",
                 "Standard",
@@ -152,61 +142,98 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Retaining Wall Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "project": {
+                              "name": projectNameController.text,
+                              "location": locationController.text,
+                            },
+                            "geometry": {
+                              "height": heightController.text,
+                              "length": lengthController.text,
+                              "baseWidth": baseWidthController.text,
+                              "stemThickness": stemThicknessController.text,
+                            },
+                            "wall": {"type": wallType},
+                            "soil": {
+                              "unitWeight": soilWeightController.text,
+                              "frictionAngle": frictionController.text,
+                              "bearingCapacity": soilBearingController.text,
+                            },
+                            "drainage": {
+                              "type": drainType,
+                              "spacing": drainSpacingController.text,
+                              "filterThickness": filterThicknessController.text,
+                            },
+                            "structure": {
+                              "concreteGrade": concreteGradeController.text,
+                              "steelGrade": steelGradeController.text,
+                              "seismicZone": seismicZoneController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "geometry": {
-                        "height": heightController.text,
-                        "length": lengthController.text,
-                        "baseWidth": baseWidthController.text,
-                        "stemThickness": stemThicknessController.text,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "retaining_wall",
+                                  inputData: data,
+                                );
 
-                      "wall": {"type": wallType},
+                            setState(() => isLoading = false);
 
-                      "soil": {
-                        "unitWeight": soilWeightController.text,
-                        "frictionAngle": frictionController.text,
-                        "bearingCapacity": soilBearingController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "drainage": {
-                        "type": drainType,
-                        "spacing": drainSpacingController.text,
-                        "filterThickness": filterThicknessController.text,
-                      },
-
-                      "structure": {
-                        "concreteGrade": concreteGradeController.text,
-                        "steelGrade": steelGradeController.text,
-                        "seismicZone": seismicZoneController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "retaining_wall",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Retaining Wall Drawing"),
                 ),
               ),
             ],
@@ -215,6 +242,8 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -226,13 +255,13 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

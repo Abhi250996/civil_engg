@@ -13,6 +13,9 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final farmNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -50,6 +53,27 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
   String detailLevel = "Standard";
 
   @override
+  void dispose() {
+    farmNameController.dispose();
+    locationController.dispose();
+    landLengthController.dispose();
+    landWidthController.dispose();
+    panelPowerController.dispose();
+    panelLengthController.dispose();
+    panelWidthController.dispose();
+    tiltController.dispose();
+    rowSpacingController.dispose();
+    panelsPerRowController.dispose();
+    rowsController.dispose();
+    inverterCountController.dispose();
+    transformerController.dispose();
+    trenchWidthController.dispose();
+    pileDepthController.dispose();
+    soilController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final args = Get.arguments ?? {};
     final project = args['project'];
@@ -59,26 +83,22 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
+              /// PROJECT
               sectionTitle("Project"),
-
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
-              field(farmNameController, "Solar Farm Name"),
-              field(locationController, "Location"),
+              field(farmNameController, "Solar Farm Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// SITE
               sectionTitle("Site Geometry"),
-
               field(landLengthController, "Land Length (m)"),
               field(landWidthController, "Land Width (m)"),
 
@@ -92,7 +112,6 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
 
               /// PANEL
               sectionTitle("Solar Panel"),
-
               dropdown("Panel Type", panelType, [
                 "Monocrystalline",
                 "Polycrystalline",
@@ -107,7 +126,6 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
 
               /// ARRAY
               sectionTitle("Array Layout"),
-
               field(tiltController, "Tilt Angle (°)"),
               field(rowSpacingController, "Row Spacing (m)"),
               field(panelsPerRowController, "Panels per Row"),
@@ -117,7 +135,6 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
 
               /// ELECTRICAL
               sectionTitle("Electrical System"),
-
               field(inverterCountController, "Number of Inverters"),
               field(transformerController, "Transformer Capacity (kVA)"),
               field(trenchWidthController, "Cable Trench Width (m)"),
@@ -126,7 +143,6 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Support"),
-
               dropdown("Mount Type", mountType, [
                 "Fixed Tilt",
                 "Single Axis Tracker",
@@ -140,7 +156,6 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:100",
                 "1:200",
@@ -162,66 +177,95 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Solar Farm Layout"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": farmNameController.text,
-                        "location": locationController.text,
-                      },
+                          final data = {
+                            "project": {
+                              "name": farmNameController.text,
+                              "location": locationController.text,
+                            },
+                            "site": {
+                              "length": landLengthController.text,
+                              "width": landWidthController.text,
+                              "terrain": terrain,
+                            },
+                            "panel": {
+                              "type": panelType,
+                              "power": panelPowerController.text,
+                              "length": panelLengthController.text,
+                              "width": panelWidthController.text,
+                            },
+                            "array": {
+                              "tilt": tiltController.text,
+                              "rowSpacing": rowSpacingController.text,
+                              "panelsPerRow": panelsPerRowController.text,
+                              "rows": rowsController.text,
+                            },
+                            "electrical": {
+                              "inverters": inverterCountController.text,
+                              "transformer": transformerController.text,
+                              "trenchWidth": trenchWidthController.text,
+                            },
+                            "structure": {
+                              "mountType": mountType,
+                              "pileDepth": pileDepthController.text,
+                              "soilBearingCapacity": soilController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "site": {
-                        "length": landLengthController.text,
-                        "width": landWidthController.text,
-                        "terrain": terrain,
-                      },
+                          try {
+                            final res = await controller
+                                .generateDrawingFromInputs(
+                                  type: "solar_farm",
+                                  inputData: data,
+                                );
 
-                      "panel": {
-                        "type": panelType,
-                        "power": panelPowerController.text,
-                        "length": panelLengthController.text,
-                        "width": panelWidthController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "array": {
-                        "tilt": tiltController.text,
-                        "rowSpacing": rowSpacingController.text,
-                        "panelsPerRow": panelsPerRowController.text,
-                        "rows": rowsController.text,
-                      },
+                            Get.snackbar(
+                              res["success"] == true ? "Success" : "Error",
+                              res["message"] ?? "Something went wrong",
+                              backgroundColor: res["success"] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                              colorText: Colors.white,
+                            );
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "electrical": {
-                        "inverters": inverterCountController.text,
-                        "transformer": transformerController.text,
-                        "trenchWidth": trenchWidthController.text,
-                      },
-
-                      "structure": {
-                        "mountType": mountType,
-                        "pileDepth": pileDepthController.text,
-                        "soilBearingCapacity": soilController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "solar_farm",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Solar Farm Layout"),
                 ),
               ),
             ],
@@ -230,6 +274,8 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -241,13 +287,13 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
-        validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        validator: (v) => v == null || v.isEmpty ? "Required" : null,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -264,7 +310,7 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField(
+      child: DropdownButtonFormField<String>(
         value: value,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))

@@ -14,6 +14,10 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
+  /// ================= CONTROLLERS =================
   final lengthController = TextEditingController();
   final widthController = TextEditingController();
   final spansController = TextEditingController();
@@ -28,6 +32,7 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
   final riverWidthController = TextEditingController();
   final floodLevelController = TextEditingController();
 
+  /// ================= DROPDOWNS =================
   String bridgeType = "Beam Bridge";
   String material = "Reinforced Concrete";
   String foundationType = "Pile Foundation";
@@ -46,24 +51,19 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               /// PROJECT
               sectionTitle("Project Information"),
-
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
               const SizedBox(height: 20),
 
               /// GEOMETRY
               sectionTitle("Bridge Geometry"),
-
               field(lengthController, "Bridge Length (m)"),
               field(widthController, "Deck Width (m)"),
               field(spansController, "Number of Spans"),
@@ -75,7 +75,6 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
 
               /// STRUCTURE
               sectionTitle("Structural Design"),
-
               dropdown("Bridge Type", bridgeType, [
                 "Beam Bridge",
                 "Arch Bridge",
@@ -95,14 +94,12 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
 
               /// FOUNDATION
               sectionTitle("Foundation"),
-
               dropdown(
                 "Foundation Type",
                 foundationType,
                 ["Pile Foundation", "Open Foundation", "Well Foundation"],
                 (v) => setState(() => foundationType = v!),
               ),
-
               field(foundationDepthController, "Foundation Depth (m)"),
               field(soilController, "Soil Bearing Capacity (kN/m²)"),
 
@@ -110,7 +107,6 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
 
               /// ENVIRONMENT
               sectionTitle("Environmental Conditions"),
-
               field(riverWidthController, "River Width (m)"),
               field(floodLevelController, "Flood Level (m)"),
 
@@ -118,7 +114,6 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
 
               /// DRAWING SETTINGS
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
@@ -140,55 +135,98 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Bridge Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "geometry": {
-                        "length": lengthController.text,
-                        "width": widthController.text,
-                        "spans": spansController.text,
-                        "spanLength": spanLengthController.text,
-                        "pierSpacing": pierSpacingController.text,
-                        "clearance": clearanceController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "geometry": {
+                              "length": lengthController.text,
+                              "width": widthController.text,
+                              "spans": spansController.text,
+                              "spanLength": spanLengthController.text,
+                              "pierSpacing": pierSpacingController.text,
+                              "clearance": clearanceController.text,
+                            },
+                            "structure": {
+                              "bridgeType": bridgeType,
+                              "material": material,
+                              "designLoad": designLoadController.text,
+                            },
+                            "foundation": {
+                              "type": foundationType,
+                              "depth": foundationDepthController.text,
+                              "soilBearingCapacity": soilController.text,
+                            },
+                            "environment": {
+                              "riverWidth": riverWidthController.text,
+                              "floodLevel": floodLevelController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "structure": {
-                        "bridgeType": bridgeType,
-                        "material": material,
-                        "designLoad": designLoadController.text,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "bridge",
+                                  inputData: data,
+                                );
 
-                      "foundation": {
-                        "type": foundationType,
-                        "depth": foundationDepthController.text,
-                        "soilBearingCapacity": soilController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "environment": {
-                        "riverWidth": riverWidthController.text,
-                        "floodLevel": floodLevelController.text,
-                      },
+                            if (response != null &&
+                                response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response?["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "bridge",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Bridge Drawing"),
                 ),
               ),
             ],
@@ -197,6 +235,8 @@ class _BridgeInputScreenState extends State<BridgeInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON WIDGETS =================
 
   Widget sectionTitle(String title) {
     return Padding(

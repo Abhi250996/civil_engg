@@ -13,6 +13,9 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final siloNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -46,6 +49,25 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
   String detailLevel = "Standard";
 
   @override
+  void dispose() {
+    siloNameController.dispose();
+    locationController.dispose();
+    heightController.dispose();
+    diameterController.dispose();
+    thicknessController.dispose();
+    hopperAngleController.dispose();
+    capacityController.dispose();
+    densityController.dispose();
+    concreteGradeController.dispose();
+    steelGradeController.dispose();
+    windLoadController.dispose();
+    foundationDiameterController.dispose();
+    foundationDepthController.dispose();
+    soilController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final args = Get.arguments ?? {};
     final project = args['project'];
@@ -55,26 +77,22 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
+              /// PROJECT
               sectionTitle("Project"),
-
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
-              field(siloNameController, "Silo Name"),
-              field(locationController, "Location"),
+              field(siloNameController, "Silo Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// GEOMETRY
               sectionTitle("Silo Geometry"),
-
               field(heightController, "Silo Height (m)"),
               field(diameterController, "Silo Diameter (m)"),
               field(thicknessController, "Wall Thickness (mm)"),
@@ -84,7 +102,6 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
 
               /// STORAGE
               sectionTitle("Storage Parameters"),
-
               dropdown("Stored Material", material, [
                 "Grain",
                 "Cement",
@@ -99,7 +116,6 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               dropdown(
                 "Structure Type",
                 structureType,
@@ -115,7 +131,6 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
 
               /// FOUNDATION
               sectionTitle("Foundation"),
-
               dropdown(
                 "Foundation Type",
                 foundationType,
@@ -131,7 +146,6 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
@@ -153,61 +167,91 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Silo Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": siloNameController.text,
-                        "location": locationController.text,
-                      },
+                          final data = {
+                            "project": {
+                              "name": siloNameController.text,
+                              "location": locationController.text,
+                            },
+                            "geometry": {
+                              "height": heightController.text,
+                              "diameter": diameterController.text,
+                              "thickness": thicknessController.text,
+                              "hopperAngle": hopperAngleController.text,
+                            },
+                            "storage": {
+                              "material": material,
+                              "capacity": capacityController.text,
+                              "density": densityController.text,
+                            },
+                            "structure": {
+                              "type": structureType,
+                              "concreteGrade": concreteGradeController.text,
+                              "steelGrade": steelGradeController.text,
+                              "windLoad": windLoadController.text,
+                            },
+                            "foundation": {
+                              "type": foundationType,
+                              "diameter": foundationDiameterController.text,
+                              "depth": foundationDepthController.text,
+                              "soilBearingCapacity": soilController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "geometry": {
-                        "height": heightController.text,
-                        "diameter": diameterController.text,
-                        "thickness": thicknessController.text,
-                        "hopperAngle": hopperAngleController.text,
-                      },
+                          try {
+                            final res = await controller
+                                .generateDrawingFromInputs(
+                                  type: "silo",
+                                  inputData: data,
+                                );
 
-                      "storage": {
-                        "material": material,
-                        "capacity": capacityController.text,
-                        "density": densityController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "structure": {
-                        "type": structureType,
-                        "concreteGrade": concreteGradeController.text,
-                        "steelGrade": steelGradeController.text,
-                        "windLoad": windLoadController.text,
-                      },
+                            Get.snackbar(
+                              res["success"] == true ? "Success" : "Error",
+                              res["message"] ?? "Something went wrong",
+                              backgroundColor: res["success"] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                              colorText: Colors.white,
+                            );
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "foundation": {
-                        "type": foundationType,
-                        "diameter": foundationDiameterController.text,
-                        "depth": foundationDepthController.text,
-                        "soilBearingCapacity": soilController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "silo",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Silo Drawing"),
                 ),
               ),
             ],
@@ -216,6 +260,8 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -227,13 +273,13 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
-        validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        validator: (v) => v == null || v.isEmpty ? "Required" : null,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -250,7 +296,7 @@ class _SiloInputScreenState extends State<SiloInputScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField(
+      child: DropdownButtonFormField<String>(
         value: value,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))

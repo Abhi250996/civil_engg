@@ -13,6 +13,9 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final roadNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -26,7 +29,6 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
   /// TRAFFIC
   final speedController = TextEditingController();
   final trafficController = TextEditingController();
-
   String roadType = "Highway";
 
   /// PAVEMENT
@@ -54,27 +56,22 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               /// PROJECT
               sectionTitle("Project"),
-
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
-              field(roadNameController, "Road Name"),
-              field(locationController, "Location"),
+              field(roadNameController, "Road Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// GEOMETRY
               sectionTitle("Road Geometry"),
-
               field(roadLengthController, "Road Length (km)"),
               field(carriageWidthController, "Carriageway Width (m)"),
               field(lanesController, "Number of Lanes"),
@@ -84,7 +81,6 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
 
               /// TRAFFIC
               sectionTitle("Traffic Parameters"),
-
               dropdown("Road Type", roadType, [
                 "Highway",
                 "City Road",
@@ -98,7 +94,6 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
 
               /// PAVEMENT
               sectionTitle("Pavement Design"),
-
               dropdown("Surface Type", surfaceType, [
                 "Asphalt",
                 "Concrete",
@@ -111,7 +106,6 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
 
               /// DRAINAGE
               sectionTitle("Drainage"),
-
               dropdown("Drain Type", drainType, [
                 "Open Drain",
                 "Covered Drain",
@@ -124,7 +118,6 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:100",
                 "1:200",
@@ -146,59 +139,97 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Road Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": roadNameController.text,
-                        "location": locationController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "project": {
+                              "name": roadNameController.text,
+                              "location": locationController.text,
+                            },
+                            "geometry": {
+                              "length": roadLengthController.text,
+                              "width": carriageWidthController.text,
+                              "lanes": lanesController.text,
+                              "shoulderWidth": shoulderWidthController.text,
+                            },
+                            "traffic": {
+                              "roadType": roadType,
+                              "speed": speedController.text,
+                              "volume": trafficController.text,
+                            },
+                            "pavement": {
+                              "surfaceType": surfaceType,
+                              "thickness": thicknessController.text,
+                              "cbr": cbrController.text,
+                            },
+                            "drainage": {
+                              "type": drainType,
+                              "width": drainWidthController.text,
+                              "depth": drainDepthController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "geometry": {
-                        "length": roadLengthController.text,
-                        "width": carriageWidthController.text,
-                        "lanes": lanesController.text,
-                        "shoulderWidth": shoulderWidthController.text,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "road",
+                                  inputData: data,
+                                );
 
-                      "traffic": {
-                        "roadType": roadType,
-                        "speed": speedController.text,
-                        "volume": trafficController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "pavement": {
-                        "surfaceType": surfaceType,
-                        "thickness": thicknessController.text,
-                        "cbr": cbrController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "drainage": {
-                        "type": drainType,
-                        "width": drainWidthController.text,
-                        "depth": drainDepthController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "road",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Road Drawing"),
                 ),
               ),
             ],
@@ -207,6 +238,8 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -218,13 +251,13 @@ class _RoadInputScreenState extends State<RoadInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

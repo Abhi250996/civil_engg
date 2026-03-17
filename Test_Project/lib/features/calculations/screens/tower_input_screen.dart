@@ -13,6 +13,9 @@ class _TowerInputScreenState extends State<TowerInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -37,9 +40,25 @@ class _TowerInputScreenState extends State<TowerInputScreen> {
   String bracingType = "X Bracing";
   String foundationType = "Pile Foundation";
 
+  /// DRAWING
   String scale = "1:100";
   String sheetSize = "A1";
   String detailLevel = "Construction";
+
+  @override
+  void dispose() {
+    projectNameController.dispose();
+    locationController.dispose();
+    heightController.dispose();
+    baseWidthController.dispose();
+    topWidthController.dispose();
+    levelsController.dispose();
+    legDiameterController.dispose();
+    windSpeedController.dispose();
+    windLoadController.dispose();
+    foundationDepthController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +77,8 @@ class _TowerInputScreenState extends State<TowerInputScreen> {
             children: [
               sectionTitle("Project Information"),
 
-              field(projectNameController, "Project Name"),
-              field(locationController, "Location"),
+              field(projectNameController, "Project Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
@@ -143,57 +162,89 @@ class _TowerInputScreenState extends State<TowerInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
 
                 child: ElevatedButton(
-                  child: const Text("Generate Tower Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                      },
+                          final data = {
+                            "project": {
+                              "name": projectNameController.text,
+                              "location": locationController.text,
+                            },
+                            "tower": {
+                              "type": towerType,
+                              "height": heightController.text,
+                              "baseWidth": baseWidthController.text,
+                              "topWidth": topWidthController.text,
+                            },
+                            "structure": {
+                              "levels": levelsController.text,
+                              "legDiameter": legDiameterController.text,
+                              "bracing": bracingType,
+                            },
+                            "wind": {
+                              "speed": windSpeedController.text,
+                              "load": windLoadController.text,
+                            },
+                            "foundation": {
+                              "type": foundationType,
+                              "depth": foundationDepthController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "tower": {
-                        "type": towerType,
-                        "height": heightController.text,
-                        "baseWidth": baseWidthController.text,
-                        "topWidth": topWidthController.text,
-                      },
+                          try {
+                            final res = await controller
+                                .generateDrawingFromInputs(
+                                  type: "tower",
+                                  inputData: data,
+                                );
 
-                      "structure": {
-                        "levels": levelsController.text,
-                        "legDiameter": legDiameterController.text,
-                        "bracing": bracingType,
-                      },
+                            setState(() => isLoading = false);
 
-                      "wind": {
-                        "speed": windSpeedController.text,
-                        "load": windLoadController.text,
-                      },
+                            Get.snackbar(
+                              res["success"] == true ? "Success" : "Error",
+                              res["message"] ?? "Something went wrong",
+                              backgroundColor: res["success"] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                              colorText: Colors.white,
+                            );
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "foundation": {
-                        "type": foundationType,
-                        "depth": foundationDepthController.text,
-                      },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
 
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "tower",
-                      inputData: data,
-                    );
-                  },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Tower Drawing"),
                 ),
               ),
             ],
@@ -202,6 +253,8 @@ class _TowerInputScreenState extends State<TowerInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -213,13 +266,13 @@ class _TowerInputScreenState extends State<TowerInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
-        validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        validator: (v) => v == null || v.isEmpty ? "Required" : null,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -236,7 +289,7 @@ class _TowerInputScreenState extends State<TowerInputScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField(
+      child: DropdownButtonFormField<String>(
         value: value,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))

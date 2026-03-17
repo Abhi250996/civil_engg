@@ -46,9 +46,6 @@ class _TunnelInputScreenState extends State<TunnelInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final args = Get.arguments ?? {};
-    final project = args['project'];
-
     return Scaffold(
       appBar: AppBar(title: const Text("Tunnel Design")),
 

@@ -15,6 +15,9 @@ class _CustomStructureInputScreenState
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// STRUCTURE INFO
   final structureNameController = TextEditingController();
   final descriptionController = TextEditingController();
@@ -53,14 +56,12 @@ class _CustomStructureInputScreenState
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
+              /// PROJECT
               sectionTitle("Project"),
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
@@ -68,15 +69,18 @@ class _CustomStructureInputScreenState
 
               /// STRUCTURE INFO
               sectionTitle("Structure Information"),
-
-              field(structureNameController, "Structure Name"),
-              field(descriptionController, "Structure Description"),
+              field(structureNameController, "Structure Name", isNumber: false),
+              field(
+                descriptionController,
+                "Structure Description",
+                isNumber: false,
+                maxLines: 3,
+              ),
 
               const SizedBox(height: 20),
 
               /// GEOMETRY
               sectionTitle("Geometry"),
-
               field(lengthController, "Length (m)"),
               field(widthController, "Width (m)"),
               field(heightController, "Height (m)"),
@@ -86,14 +90,12 @@ class _CustomStructureInputScreenState
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               dropdown(
                 "Material Type",
                 materialType,
                 ["Concrete", "Steel", "Composite"],
                 (v) => setState(() => materialType = v!),
               ),
-
               field(designLoadController, "Design Load (kN)"),
               field(liveLoadController, "Live Load (kN/m²)"),
               field(windLoadController, "Wind Load (kN/m²)"),
@@ -103,14 +105,12 @@ class _CustomStructureInputScreenState
 
               /// FOUNDATION
               sectionTitle("Foundation"),
-
               dropdown(
                 "Foundation Type",
                 foundationType,
                 ["Isolated Footing", "Raft", "Pile", "Strip Footing"],
                 (v) => setState(() => foundationType = v!),
               ),
-
               field(foundationDepthController, "Foundation Depth (m)"),
               field(soilController, "Soil Bearing Capacity (kN/m²)"),
 
@@ -118,7 +118,6 @@ class _CustomStructureInputScreenState
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
@@ -140,55 +139,97 @@ class _CustomStructureInputScreenState
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Custom Structure Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "structure": {
-                        "name": structureNameController.text,
-                        "description": descriptionController.text,
-                        "material": materialType,
-                      },
+                          Map<String, dynamic> data = {
+                            "structure": {
+                              "name": structureNameController.text,
+                              "description": descriptionController.text,
+                              "material": materialType,
+                            },
+                            "geometry": {
+                              "length": lengthController.text,
+                              "width": widthController.text,
+                              "height": heightController.text,
+                              "levels": levelsController.text,
+                            },
+                            "loads": {
+                              "designLoad": designLoadController.text,
+                              "liveLoad": liveLoadController.text,
+                              "windLoad": windLoadController.text,
+                              "seismicZone": seismicZoneController.text,
+                            },
+                            "foundation": {
+                              "type": foundationType,
+                              "depth": foundationDepthController.text,
+                              "soilBearingCapacity": soilController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "geometry": {
-                        "length": lengthController.text,
-                        "width": widthController.text,
-                        "height": heightController.text,
-                        "levels": levelsController.text,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "custom",
+                                  inputData: data,
+                                );
 
-                      "loads": {
-                        "designLoad": designLoadController.text,
-                        "liveLoad": liveLoadController.text,
-                        "windLoad": windLoadController.text,
-                        "seismicZone": seismicZoneController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "foundation": {
-                        "type": foundationType,
-                        "depth": foundationDepthController.text,
-                        "soilBearingCapacity": soilController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "custom",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Custom Structure Drawing"),
                 ),
               ),
             ],
@@ -197,6 +238,8 @@ class _CustomStructureInputScreenState
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -208,13 +251,19 @@ class _CustomStructureInputScreenState
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(
+    TextEditingController c,
+    String label, {
+    bool isNumber = true,
+    int maxLines = 1,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
+        maxLines: maxLines,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

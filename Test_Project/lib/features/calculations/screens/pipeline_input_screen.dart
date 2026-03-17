@@ -13,6 +13,9 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -49,24 +52,20 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               sectionTitle("Project Information"),
 
-              field(projectNameController, "Project Name"),
-              field(locationController, "Location"),
+              field(projectNameController, "Project Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
-              /// PIPELINE GEOMETRY
+              /// PIPELINE
               sectionTitle("Pipeline Geometry"),
-
               field(lengthController, "Pipeline Length (km)"),
               field(diameterController, "Pipe Diameter (mm)"),
               field(thicknessController, "Wall Thickness (mm)"),
@@ -75,7 +74,6 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
 
               /// HYDRAULICS
               sectionTitle("Hydraulic Parameters"),
-
               field(flowRateController, "Flow Rate (m³/s)"),
               field(pressureController, "Pressure (bar)"),
 
@@ -90,7 +88,6 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
 
               /// ROUTE
               sectionTitle("Route Parameters"),
-
               field(startElevationController, "Start Elevation (m)"),
               field(endElevationController, "End Elevation (m)"),
 
@@ -104,7 +101,6 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
 
               /// COMPONENTS
               sectionTitle("Pipeline Components"),
-
               field(valveSpacingController, "Valve Spacing (m)"),
               field(pumpStationsController, "Number of Pump Stations"),
               field(supportSpacingController, "Support Spacing (m)"),
@@ -113,7 +109,6 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:200",
                 "1:500",
@@ -135,58 +130,99 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Pipeline Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "project": {
+                              "name": projectNameController.text,
+                              "location": locationController.text,
+                            },
+                            "pipeline": {
+                              "length": lengthController.text,
+                              "diameter": diameterController.text,
+                              "thickness": thicknessController.text,
+                            },
+                            "hydraulics": {
+                              "flowRate": flowRateController.text,
+                              "pressure": pressureController.text,
+                              "fluid": fluidType,
+                            },
+                            "route": {
+                              "startElevation": startElevationController.text,
+                              "endElevation": endElevationController.text,
+                              "ground": groundType,
+                            },
+                            "components": {
+                              "valveSpacing": valveSpacingController.text,
+                              "pumpStations": pumpStationsController.text,
+                              "supportSpacing": supportSpacingController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "pipeline": {
-                        "length": lengthController.text,
-                        "diameter": diameterController.text,
-                        "thickness": thicknessController.text,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "pipeline",
+                                  inputData: data,
+                                );
 
-                      "hydraulics": {
-                        "flowRate": flowRateController.text,
-                        "pressure": pressureController.text,
-                        "fluid": fluidType,
-                      },
+                            setState(() => isLoading = false);
 
-                      "route": {
-                        "startElevation": startElevationController.text,
-                        "endElevation": endElevationController.text,
-                        "ground": groundType,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "components": {
-                        "valveSpacing": valveSpacingController.text,
-                        "pumpStations": pumpStationsController.text,
-                        "supportSpacing": supportSpacingController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "pipeline",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Pipeline Drawing"),
                 ),
               ),
             ],
@@ -195,6 +231,8 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -206,13 +244,13 @@ class _PipelineInputScreenState extends State<PipelineInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

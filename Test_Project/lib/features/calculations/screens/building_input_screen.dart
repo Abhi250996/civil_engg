@@ -13,6 +13,9 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -49,25 +52,20 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               /// PROJECT
               sectionTitle("Project Information"),
-
-              field(projectNameController, "Project Name"),
-              field(locationController, "Location"),
+              field(projectNameController, "Project Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 25),
 
               /// SITE
               sectionTitle("Site Geometry"),
-
               field(plotLengthController, "Plot Length (m)"),
               field(plotWidthController, "Plot Width (m)"),
 
@@ -82,7 +80,6 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
 
               /// BUILDING PROGRAM
               sectionTitle("Building Program"),
-
               field(floorsController, "Number of Floors"),
               field(roomsController, "Rooms / BHK"),
               field(floorHeightController, "Floor Height (m)"),
@@ -91,7 +88,6 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
 
               /// SETBACKS
               sectionTitle("Building Setbacks"),
-
               field(frontSetbackController, "Front Setback (m)"),
               field(rearSetbackController, "Rear Setback (m)"),
               field(sideSetbackController, "Side Setback (m)"),
@@ -100,7 +96,6 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               field(soilController, "Soil Bearing Capacity (kN/m²)"),
               field(seismicZoneController, "Seismic Zone"),
               field(designLoadController, "Design Load (kN)"),
@@ -109,7 +104,6 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
 
               /// DRAWING SETTINGS
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
@@ -131,58 +125,97 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Building Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "project": {
+                              "name": projectNameController.text,
+                              "location": locationController.text,
+                            },
+                            "site": {
+                              "length": plotLengthController.text,
+                              "width": plotWidthController.text,
+                              "orientation": orientation,
+                            },
+                            "building": {
+                              "floors": floorsController.text,
+                              "rooms": roomsController.text,
+                              "floorHeight": floorHeightController.text,
+                            },
+                            "setbacks": {
+                              "front": frontSetbackController.text,
+                              "rear": rearSetbackController.text,
+                              "side": sideSetbackController.text,
+                            },
+                            "structure": {
+                              "soilBearingCapacity": soilController.text,
+                              "seismicZone": seismicZoneController.text,
+                              "designLoad": designLoadController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "site": {
-                        "length": plotLengthController.text,
-                        "width": plotWidthController.text,
-                        "orientation": orientation,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "building",
+                                  inputData: data,
+                                );
 
-                      "building": {
-                        "floors": floorsController.text,
-                        "rooms": roomsController.text,
-                        "floorHeight": floorHeightController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "setbacks": {
-                        "front": frontSetbackController.text,
-                        "rear": rearSetbackController.text,
-                        "side": sideSetbackController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ?? "Drawing generated",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "structure": {
-                        "soilBearingCapacity": soilController.text,
-                        "seismicZone": seismicZoneController.text,
-                        "designLoad": designLoadController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "building",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Building Drawing"),
                 ),
               ),
             ],
@@ -191,6 +224,8 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON WIDGETS =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -202,12 +237,12 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
-        keyboardType: TextInputType.number,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
         decoration: InputDecoration(
           labelText: label,

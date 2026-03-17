@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:test_project/bindings/field_tools_binding.dart';
 import 'package:test_project/core/constants/route_constants.dart';
 import 'package:test_project/features/ai_assistant/screens/ai_civil_screen.dart';
+import 'package:test_project/features/calculations/screens/thermal_chimney_input_screen.dart';
 import 'package:test_project/features/field_tools/screens/area_calc_screen.dart';
 import 'package:test_project/features/field_tools/screens/cad_viewer_screen.dart';
 import 'package:test_project/features/field_tools/screens/concrete_calc_screen.dart';
@@ -221,7 +222,11 @@ class AppPages {
       page: () => const ChimneyInputScreen(),
       binding: CalculationBinding(),
     ),
-
+    GetPage(
+      name: RouteConstants.thermalChimneyInput,
+      page: () => const ThermalChimneyInputScreen(),
+      binding: CalculationBinding(),
+    ),
     GetPage(
       name: RouteConstants.coolingTowerInput,
       page: () => const CoolingTowerInputScreen(),

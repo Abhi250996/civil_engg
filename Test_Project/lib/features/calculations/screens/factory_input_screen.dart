@@ -13,6 +13,9 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final factoryNameController = TextEditingController();
   final industryController = TextEditingController();
@@ -57,28 +60,23 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               /// PROJECT
               sectionTitle("Project"),
-
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
-              field(factoryNameController, "Factory Name"),
-              field(industryController, "Industry Type"),
-              field(locationController, "Location"),
+              field(factoryNameController, "Factory Name", isNumber: false),
+              field(industryController, "Industry Type", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// SITE
               sectionTitle("Site Geometry"),
-
               field(plotLengthController, "Plot Length (m)"),
               field(plotWidthController, "Plot Width (m)"),
 
@@ -93,7 +91,6 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
 
               /// FACTORY LAYOUT
               sectionTitle("Factory Layout"),
-
               field(productionAreaController, "Production Area (m²)"),
               field(productionLinesController, "Number of Production Lines"),
               field(machineSpacingController, "Machine Spacing (m)"),
@@ -104,7 +101,6 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               field(buildingHeightController, "Building Height (m)"),
               field(columnSpacingController, "Column Spacing (m)"),
 
@@ -119,7 +115,6 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
 
               /// LOGISTICS
               sectionTitle("Logistics"),
-
               field(loadingDocksController, "Number of Loading Docks"),
               field(truckAccessController, "Truck Access Width (m)"),
               field(internalRoadController, "Internal Road Width (m)"),
@@ -128,7 +123,6 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
@@ -150,62 +144,103 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Factory Layout"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "factoryName": factoryNameController.text,
-                        "industry": industryController.text,
-                        "location": locationController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "project": {
+                              "factoryName": factoryNameController.text,
+                              "industry": industryController.text,
+                              "location": locationController.text,
+                            },
+                            "site": {
+                              "length": plotLengthController.text,
+                              "width": plotWidthController.text,
+                              "orientation": orientation,
+                            },
+                            "layout": {
+                              "productionArea": productionAreaController.text,
+                              "productionLines": productionLinesController.text,
+                              "machineSpacing": machineSpacingController.text,
+                              "storageArea": storageAreaController.text,
+                              "officeArea": officeAreaController.text,
+                            },
+                            "structure": {
+                              "height": buildingHeightController.text,
+                              "columnSpacing": columnSpacingController.text,
+                              "roofType": roofType,
+                              "floorLoad": floorLoadController.text,
+                            },
+                            "logistics": {
+                              "loadingDocks": loadingDocksController.text,
+                              "truckAccess": truckAccessController.text,
+                              "internalRoad": internalRoadController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "site": {
-                        "length": plotLengthController.text,
-                        "width": plotWidthController.text,
-                        "orientation": orientation,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "factory",
+                                  inputData: data,
+                                );
 
-                      "layout": {
-                        "productionArea": productionAreaController.text,
-                        "productionLines": productionLinesController.text,
-                        "machineSpacing": machineSpacingController.text,
-                        "storageArea": storageAreaController.text,
-                        "officeArea": officeAreaController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "structure": {
-                        "height": buildingHeightController.text,
-                        "columnSpacing": columnSpacingController.text,
-                        "roofType": roofType,
-                        "floorLoad": floorLoadController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "logistics": {
-                        "loadingDocks": loadingDocksController.text,
-                        "truckAccess": truckAccessController.text,
-                        "internalRoad": internalRoadController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "factory",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Factory Layout"),
                 ),
               ),
             ],
@@ -214,6 +249,8 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -225,13 +262,13 @@ class _FactoryInputScreenState extends State<FactoryInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

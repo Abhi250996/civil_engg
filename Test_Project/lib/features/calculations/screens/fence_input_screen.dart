@@ -13,6 +13,9 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -50,26 +53,22 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
+              /// PROJECT
               sectionTitle("Project"),
-
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
-              field(projectNameController, "Project Name"),
-              field(locationController, "Location"),
+              field(projectNameController, "Project Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// BOUNDARY
               sectionTitle("Boundary Geometry"),
-
               field(boundaryLengthController, "Boundary Length (m)"),
               field(fenceHeightController, "Fence Height (m)"),
 
@@ -77,7 +76,6 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
 
               /// FENCE TYPE
               sectionTitle("Fence Type"),
-
               dropdown("Fence Type", fenceType, [
                 "Chain Link",
                 "Barbed Wire",
@@ -87,11 +85,8 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
 
               field(postSpacingController, "Post Spacing (m)"),
 
-              const SizedBox(height: 20),
-
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               field(postDiameterController, "Post Diameter (mm)"),
               field(postDepthController, "Post Depth (m)"),
               field(concreteGradeController, "Concrete Grade"),
@@ -100,7 +95,6 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
 
               /// GATE
               sectionTitle("Gate Details"),
-
               field(gateCountController, "Number of Gates"),
               field(gateWidthController, "Gate Width (m)"),
 
@@ -113,7 +107,6 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
@@ -135,56 +128,97 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Fence Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "project": {
+                              "name": projectNameController.text,
+                              "location": locationController.text,
+                            },
+                            "boundary": {
+                              "length": boundaryLengthController.text,
+                              "height": fenceHeightController.text,
+                            },
+                            "fence": {
+                              "type": fenceType,
+                              "postSpacing": postSpacingController.text,
+                            },
+                            "structure": {
+                              "postDiameter": postDiameterController.text,
+                              "postDepth": postDepthController.text,
+                              "concreteGrade": concreteGradeController.text,
+                            },
+                            "gate": {
+                              "count": gateCountController.text,
+                              "width": gateWidthController.text,
+                              "type": gateType,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "boundary": {
-                        "length": boundaryLengthController.text,
-                        "height": fenceHeightController.text,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "fence",
+                                  inputData: data,
+                                );
 
-                      "fence": {
-                        "type": fenceType,
-                        "postSpacing": postSpacingController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "structure": {
-                        "postDiameter": postDiameterController.text,
-                        "postDepth": postDepthController.text,
-                        "concreteGrade": concreteGradeController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "gate": {
-                        "count": gateCountController.text,
-                        "width": gateWidthController.text,
-                        "type": gateType,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "fence",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Fence Drawing"),
                 ),
               ),
             ],
@@ -193,6 +227,8 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -204,13 +240,13 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

@@ -13,6 +13,9 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// GEOMETRY
   final heightController = TextEditingController();
   final baseDiameterController = TextEditingController();
@@ -53,13 +56,10 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               /// PROJECT
               sectionTitle("Project"),
@@ -69,7 +69,6 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
 
               /// GEOMETRY
               sectionTitle("Geometry"),
-
               field(heightController, "Chimney Height (m)"),
               field(baseDiameterController, "Base Diameter (m)"),
               field(topDiameterController, "Top Diameter (m)"),
@@ -79,7 +78,6 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               dropdown("Material", material, [
                 "Reinforced Concrete",
                 "Steel",
@@ -94,7 +92,6 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
 
               /// THERMAL
               sectionTitle("Thermal Parameters"),
-
               field(gasTempController, "Flue Gas Temperature (°C)"),
               field(gasVelocityController, "Gas Velocity (m/s)"),
               field(liningThicknessController, "Lining Thickness (mm)"),
@@ -103,14 +100,12 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
 
               /// FOUNDATION
               sectionTitle("Foundation"),
-
               dropdown(
                 "Foundation Type",
                 foundationType,
                 ["Circular Footing", "Raft", "Pile Foundation"],
                 (v) => setState(() => foundationType = v!),
               ),
-
               field(foundationDiameterController, "Foundation Diameter (m)"),
               field(foundationDepthController, "Foundation Depth (m)"),
               field(soilController, "Soil Bearing Capacity (kN/m²)"),
@@ -119,7 +114,6 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
 
               /// DRAWING SETTINGS
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
@@ -141,57 +135,99 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Chimney Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "geometry": {
-                        "height": heightController.text,
-                        "baseDiameter": baseDiameterController.text,
-                        "topDiameter": topDiameterController.text,
-                        "thickness": thicknessController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "geometry": {
+                              "height": heightController.text,
+                              "baseDiameter": baseDiameterController.text,
+                              "topDiameter": topDiameterController.text,
+                              "thickness": thicknessController.text,
+                            },
+                            "structure": {
+                              "material": material,
+                              "windLoad": windLoadController.text,
+                              "seismicZone": seismicZoneController.text,
+                              "concreteGrade": concreteGradeController.text,
+                              "steelGrade": steelGradeController.text,
+                            },
+                            "thermal": {
+                              "gasTemp": gasTempController.text,
+                              "gasVelocity": gasVelocityController.text,
+                              "liningThickness": liningThicknessController.text,
+                            },
+                            "foundation": {
+                              "type": foundationType,
+                              "diameter": foundationDiameterController.text,
+                              "depth": foundationDepthController.text,
+                              "soilBearingCapacity": soilController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "structure": {
-                        "material": material,
-                        "windLoad": windLoadController.text,
-                        "seismicZone": seismicZoneController.text,
-                        "concreteGrade": concreteGradeController.text,
-                        "steelGrade": steelGradeController.text,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "chimney",
+                                  inputData: data,
+                                );
 
-                      "thermal": {
-                        "gasTemp": gasTempController.text,
-                        "gasVelocity": gasVelocityController.text,
-                        "liningThickness": liningThicknessController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "foundation": {
-                        "type": foundationType,
-                        "diameter": foundationDiameterController.text,
-                        "depth": foundationDepthController.text,
-                        "soilBearingCapacity": soilController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "chimney",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Chimney Drawing"),
                 ),
               ),
             ],
@@ -200,6 +236,8 @@ class _ChimneyInputScreenState extends State<ChimneyInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(

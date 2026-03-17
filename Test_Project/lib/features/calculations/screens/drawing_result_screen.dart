@@ -42,12 +42,26 @@ class DrawingResultScreen extends GetView<CalculationController> {
 
           Expanded(
             child: Obx(() {
+              /// ================= LOADING =================
               if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 12),
+                    Text(controller.statusMessage.value),
+                  ],
+                );
               }
 
+              /// ================= EMPTY =================
               if (controller.imageUrl.value.isEmpty) {
-                return const Center(child: Text("No Drawing Found"));
+                return const Center(
+                  child: Text(
+                    "No Drawing Found",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                );
               }
 
               return _viewer();
@@ -60,7 +74,7 @@ class DrawingResultScreen extends GetView<CalculationController> {
     );
   }
 
-  /// HEADER
+  /// ================= HEADER =================
 
   Widget _header() {
     return Container(
@@ -70,7 +84,6 @@ class DrawingResultScreen extends GetView<CalculationController> {
       child: Row(
         children: [
           const Icon(Icons.auto_awesome, size: 16, color: accentBlue),
-
           const SizedBox(width: 8),
 
           const Text(
@@ -95,14 +108,13 @@ class DrawingResultScreen extends GetView<CalculationController> {
     );
   }
 
-  /// VIEWER
+  /// ================= VIEWER =================
 
   Widget _viewer() {
     final url = controller.imageUrl.value;
 
     return Container(
       margin: const EdgeInsets.all(16),
-
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -127,106 +139,161 @@ class DrawingResultScreen extends GetView<CalculationController> {
               ? Image.memory(
                   base64Decode(url.split(',').last),
                   fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) =>
+                      const Center(child: Text("Invalid Image")),
                 )
-              : Image.network(url, fit: BoxFit.contain),
+              : Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) =>
+                      const Center(child: Text("Failed to load image")),
+                ),
         ),
       ),
     );
   }
 
-  /// TOOLBAR
+  /// ================= TOOLBAR =================
 
   Widget _toolbar() {
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return Obx(() {
+      final hasImage = controller.imageUrl.value.isNotEmpty;
 
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
-      ),
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+        ),
 
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
 
-        children: [
-          _btn(Icons.zoom_out_map, "Reset", controller.resetZoom),
+          children: [
+            _btn(
+              Icons.zoom_out_map,
+              "Reset",
+              controller.resetZoom,
+              enabled: hasImage,
+            ),
 
-          _btn(Icons.download, "Save", _save),
+            _btn(Icons.download, "Save", _save, enabled: hasImage),
 
-          _btn(Icons.share, "Share", _share),
+            _btn(Icons.share, "Share", _share, enabled: hasImage),
 
-          _btn(Icons.print, "Print", _print),
+            _btn(Icons.print, "Print", _print, enabled: hasImage),
 
-          _btn(Icons.delete_outline, "Clear", controller.clearDrawing),
-        ],
-      ),
-    );
+            _btn(
+              Icons.delete_outline,
+              "Clear",
+              controller.clearDrawing,
+              enabled: hasImage,
+            ),
+          ],
+        ),
+      );
+    });
   }
 
-  /// BUTTON
+  /// ================= BUTTON =================
 
-  Widget _btn(IconData icon, String label, VoidCallback onTap) {
+  Widget _btn(
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    bool enabled = true,
+  }) {
     return InkWell(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
 
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.4,
 
-        children: [
-          Icon(icon, color: primaryBlue),
-
-          const SizedBox(height: 4),
-
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-          ),
-        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: primaryBlue),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// SAVE
+  /// ================= SAVE =================
 
   Future<void> _save() async {
-    final bytes = await controller.getImageBytes();
+    try {
+      final bytes = await controller.getImageBytes();
 
-    if (kIsWeb) {
-      final blob = html.Blob([bytes]);
+      if (kIsWeb) {
+        final blob = html.Blob([bytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
 
-      final url = html.Url.createObjectUrlFromBlob(blob);
+        html.AnchorElement(href: url)
+          ..setAttribute("download", "drawing.png")
+          ..click();
 
-      html.AnchorElement(href: url)
-        ..setAttribute("download", "drawing.png")
-        ..click();
+        html.Url.revokeObjectUrl(url);
+      }
 
-      html.Url.revokeObjectUrl(url);
-    } else {
-      Get.snackbar("Saved", "Image downloaded");
+      Get.snackbar(
+        "Success",
+        "Drawing saved successfully",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Failed to save drawing",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
-  /// SHARE
+  /// ================= SHARE =================
 
   Future<void> _share() async {
-    final bytes = await controller.getImageBytes();
+    try {
+      final bytes = await controller.getImageBytes();
 
-    if (kIsWeb) {
-      final blob = html.Blob([bytes]);
-
-      final url = html.Url.createObjectUrlFromBlob(blob);
-
-      html.window.open(url, "_blank");
-    } else {
-      await Share.shareXFiles([XFile.fromData(bytes, name: "drawing.png")]);
+      if (kIsWeb) {
+        final blob = html.Blob([bytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        html.window.open(url, "_blank");
+      } else {
+        await Share.shareXFiles([XFile.fromData(bytes, name: "drawing.png")]);
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Failed to share",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
-  /// PRINT
+  /// ================= PRINT =================
 
   Future<void> _print() async {
-    final bytes = await controller.getImageBytes();
+    try {
+      final bytes = await controller.getImageBytes();
 
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Print failed",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 }

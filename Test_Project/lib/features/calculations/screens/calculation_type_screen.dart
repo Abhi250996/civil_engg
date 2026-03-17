@@ -22,9 +22,19 @@ class _CalculationTypeScreenState extends State<CalculationTypeScreen>
   @override
   void initState() {
     super.initState();
-    controller = Get.put(CalculationController());
-    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+
+    /// ✅ FIX: prevent multiple instances
+    controller = Get.isRegistered<CalculationController>()
+        ? Get.find<CalculationController>()
+        : Get.put(CalculationController());
+
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
+
     _fadeCtrl.forward();
   }
 
@@ -43,101 +53,174 @@ class _CalculationTypeScreenState extends State<CalculationTypeScreen>
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        toolbarHeight: 40, // Reduced height
+        toolbarHeight: 42,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: primaryBlue, size: 16),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: primaryBlue,
+            size: 16,
+          ),
           onPressed: () => Get.back(),
         ),
-        title: const Text('MODULES',
-            style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5)),
+        title: const Text(
+          'MODULES',
+          style: TextStyle(
+            color: primaryBlue,
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 1.5,
+          ),
+        ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // Responsive column logic for small squares
-          double width = constraints.maxWidth;
-          int crossAxisCount = (width > 1000) ? 8 : (width > 700) ? 6 : (width > 400) ? 4 : 3;
 
-          return FadeTransition(
-            opacity: _fadeAnim,
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  color: Colors.white,
-                  child: const Text('Select Module',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: primaryBlue)),
-                ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: controller.structureTypes.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 1.0, // Forced Square
+      /// ================= BODY =================
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              double width = constraints.maxWidth;
+
+              int crossAxisCount = (width > 1200)
+                  ? 8
+                  : (width > 900)
+                  ? 6
+                  : (width > 600)
+                  ? 5
+                  : (width > 400)
+                  ? 4
+                  : 3;
+
+              return FadeTransition(
+                opacity: _fadeAnim,
+                child: Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      color: Colors.white,
+                      child: const Text(
+                        'Select Module',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: primaryBlue,
+                        ),
+                      ),
                     ),
-                    itemBuilder: (context, index) {
-                      final item = controller.structureTypes[index];
-                      return _SmallSquareCard(
-                        title: item['title'] as String,
-                        icon: item['icon'] as IconData,
-                        onTap: () => controller.openStructure(project, item['type']),
-                      );
-                    },
-                  ),
+
+                    /// ================= GRID =================
+                    Expanded(
+                      child: GridView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: controller.structureTypes.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 1,
+                        ),
+                        itemBuilder: (context, index) {
+                          final item = controller.structureTypes[index];
+
+                          return _SmallSquareCard(
+                            title: item['title'] as String,
+                            icon: item['icon'] as IconData,
+                            onTap: () {
+                              controller.openStructure(project, item['type']);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+
+          /// ================= GLOBAL LOADER =================
+          Obx(() {
+            if (!controller.isLoading.value) return const SizedBox();
+
+            return Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(child: CircularProgressIndicator()),
+            );
+          }),
+        ],
       ),
     );
   }
 }
 
-class _SmallSquareCard extends StatelessWidget {
+class _SmallSquareCard extends StatefulWidget {
   final String title;
   final IconData icon;
   final VoidCallback onTap;
 
-  const _SmallSquareCard({required this.title, required this.icon, required this.onTap});
+  const _SmallSquareCard({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  State<_SmallSquareCard> createState() => _SmallSquareCardState();
+}
+
+class _SmallSquareCardState extends State<_SmallSquareCard> {
+  double scale = 1.0;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 22, color: const Color(0xFF1E3A8A)),
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  title.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 8,
-                    color: Color(0xFF1E3A8A),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => scale = 0.95),
+      onTapUp: (_) => setState(() => scale = 1.0),
+      onTapCancel: () => setState(() => scale = 1.0),
+
+      onTap: widget.onTap,
+
+      child: AnimatedScale(
+        scale: scale,
+        duration: const Duration(milliseconds: 120),
+
+        child: Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          elevation: 1,
+
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(widget.icon, size: 24, color: const Color(0xFF1E3A8A)),
+
+                const SizedBox(height: 6),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    widget.title.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 9,
+                      color: Color(0xFF1E3A8A),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

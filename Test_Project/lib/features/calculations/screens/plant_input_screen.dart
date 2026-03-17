@@ -13,6 +13,9 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final plantNameController = TextEditingController();
   final industryController = TextEditingController();
@@ -38,7 +41,6 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
   final buildingHeightController = TextEditingController();
   final columnSpacingController = TextEditingController();
   final floorLoadController = TextEditingController();
-
   String materialType = "Steel";
 
   /// UTILITIES
@@ -61,27 +63,22 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               sectionTitle("Project"),
-
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
-              field(plantNameController, "Plant Name"),
-              field(industryController, "Industry Type"),
-              field(locationController, "Location"),
+              field(plantNameController, "Plant Name", isNumber: false),
+              field(industryController, "Industry Type", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// SITE
               sectionTitle("Site Geometry"),
-
               field(siteLengthController, "Site Length (m)"),
               field(siteWidthController, "Site Width (m)"),
 
@@ -96,7 +93,6 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
 
               /// LAYOUT
               sectionTitle("Plant Layout"),
-
               field(productionAreaController, "Production Area (m²)"),
               field(utilityAreaController, "Utility Area (m²)"),
               field(storageAreaController, "Storage Area (m²)"),
@@ -106,8 +102,7 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
 
               /// EQUIPMENT
               sectionTitle("Equipment"),
-
-              field(equipmentCountController, "Number of Major Equipment"),
+              field(equipmentCountController, "Number of Equipment"),
               field(equipmentSpacingController, "Equipment Spacing (m)"),
               field(craneCapacityController, "Crane Capacity (tons)"),
 
@@ -115,7 +110,6 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               field(buildingHeightController, "Building Height (m)"),
               field(columnSpacingController, "Column Spacing (m)"),
               field(floorLoadController, "Floor Load Capacity (kN/m²)"),
@@ -131,7 +125,6 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
 
               /// UTILITIES
               sectionTitle("Utilities"),
-
               field(pipelineWidthController, "Pipeline Corridor Width (m)"),
               field(internalRoadController, "Internal Road Width (m)"),
               field(serviceRoadsController, "Number of Service Roads"),
@@ -140,7 +133,6 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:100",
                 "1:200",
@@ -162,67 +154,104 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Plant Layout"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": plantNameController.text,
-                        "industry": industryController.text,
-                        "location": locationController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "project": {
+                              "name": plantNameController.text,
+                              "industry": industryController.text,
+                              "location": locationController.text,
+                            },
+                            "site": {
+                              "length": siteLengthController.text,
+                              "width": siteWidthController.text,
+                              "orientation": orientation,
+                            },
+                            "layout": {
+                              "productionArea": productionAreaController.text,
+                              "utilityArea": utilityAreaController.text,
+                              "storageArea": storageAreaController.text,
+                              "controlRoom": controlRoomController.text,
+                            },
+                            "equipment": {
+                              "count": equipmentCountController.text,
+                              "spacing": equipmentSpacingController.text,
+                              "craneCapacity": craneCapacityController.text,
+                            },
+                            "structure": {
+                              "height": buildingHeightController.text,
+                              "columnSpacing": columnSpacingController.text,
+                              "floorLoad": floorLoadController.text,
+                              "material": materialType,
+                            },
+                            "utilities": {
+                              "pipelineWidth": pipelineWidthController.text,
+                              "internalRoad": internalRoadController.text,
+                              "serviceRoads": serviceRoadsController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "site": {
-                        "length": siteLengthController.text,
-                        "width": siteWidthController.text,
-                        "orientation": orientation,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "plant",
+                                  inputData: data,
+                                );
 
-                      "layout": {
-                        "productionArea": productionAreaController.text,
-                        "utilityArea": utilityAreaController.text,
-                        "storageArea": storageAreaController.text,
-                        "controlRoom": controlRoomController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "equipment": {
-                        "count": equipmentCountController.text,
-                        "spacing": equipmentSpacingController.text,
-                        "craneCapacity": craneCapacityController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "structure": {
-                        "height": buildingHeightController.text,
-                        "columnSpacing": columnSpacingController.text,
-                        "floorLoad": floorLoadController.text,
-                        "material": materialType,
-                      },
-
-                      "utilities": {
-                        "pipelineWidth": pipelineWidthController.text,
-                        "internalRoad": internalRoadController.text,
-                        "serviceRoads": serviceRoadsController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "plant",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Plant Layout"),
                 ),
               ),
             ],
@@ -231,6 +260,8 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -242,13 +273,13 @@ class _PlantInputScreenState extends State<PlantInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

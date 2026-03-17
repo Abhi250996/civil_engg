@@ -28,6 +28,8 @@ class RouteConstants {
   static const String calculationType = "/calculation-type";
   static const String houseInput = "/house-input";
   static const String chimneyInput = "/chimney-input";
+  static const String thermalChimneyInput = "/thermal-chimney-input";
+
   static const String drawingResult = "/drawing-result";
 
   /// =========================

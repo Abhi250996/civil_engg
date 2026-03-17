@@ -14,6 +14,9 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// GEOMETRY
   final heightController = TextEditingController();
   final baseDiameterController = TextEditingController();
@@ -56,14 +59,12 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
+              /// PROJECT
               sectionTitle("Project"),
               Text("Project: ${project?.name ?? "Unnamed"}"),
 
@@ -71,7 +72,6 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
 
               /// GEOMETRY
               sectionTitle("Tower Geometry"),
-
               field(heightController, "Tower Height (m)"),
               field(baseDiameterController, "Base Diameter (m)"),
               field(throatDiameterController, "Throat Diameter (m)"),
@@ -82,7 +82,6 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
 
               /// THERMAL
               sectionTitle("Thermal Parameters"),
-
               field(waterFlowController, "Water Flow Rate (m³/hr)"),
               field(inletTempController, "Inlet Water Temperature (°C)"),
               field(outletTempController, "Outlet Water Temperature (°C)"),
@@ -92,7 +91,6 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
 
               /// MECHANICAL
               sectionTitle("Mechanical System"),
-
               dropdown("Tower Type", towerType, [
                 "Natural Draft",
                 "Mechanical Draft",
@@ -106,7 +104,6 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               field(concreteGradeController, "Concrete Grade"),
               field(steelGradeController, "Steel Grade"),
               field(windLoadController, "Wind Load (kN/m²)"),
@@ -117,7 +114,6 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:50",
                 "1:100",
@@ -139,59 +135,101 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Cooling Tower Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "geometry": {
-                        "height": heightController.text,
-                        "baseDiameter": baseDiameterController.text,
-                        "throatDiameter": throatDiameterController.text,
-                        "topDiameter": topDiameterController.text,
-                        "shellThickness": shellThicknessController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "geometry": {
+                              "height": heightController.text,
+                              "baseDiameter": baseDiameterController.text,
+                              "throatDiameter": throatDiameterController.text,
+                              "topDiameter": topDiameterController.text,
+                              "shellThickness": shellThicknessController.text,
+                            },
+                            "thermal": {
+                              "waterFlow": waterFlowController.text,
+                              "inletTemp": inletTempController.text,
+                              "outletTemp": outletTempController.text,
+                              "airFlow": airFlowController.text,
+                            },
+                            "mechanical": {
+                              "towerType": towerType,
+                              "fanDiameter": fanDiameterController.text,
+                              "fanCount": fanCountController.text,
+                              "fillHeight": fillHeightController.text,
+                            },
+                            "structure": {
+                              "windLoad": windLoadController.text,
+                              "seismicZone": seismicZoneController.text,
+                              "soilBearingCapacity": soilController.text,
+                              "concreteGrade": concreteGradeController.text,
+                              "steelGrade": steelGradeController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "thermal": {
-                        "waterFlow": waterFlowController.text,
-                        "inletTemp": inletTempController.text,
-                        "outletTemp": outletTempController.text,
-                        "airFlow": airFlowController.text,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "cooling_tower",
+                                  inputData: data,
+                                );
 
-                      "mechanical": {
-                        "towerType": towerType,
-                        "fanDiameter": fanDiameterController.text,
-                        "fanCount": fanCountController.text,
-                        "fillHeight": fillHeightController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "structure": {
-                        "windLoad": windLoadController.text,
-                        "seismicZone": seismicZoneController.text,
-                        "soilBearingCapacity": soilController.text,
-                        "concreteGrade": concreteGradeController.text,
-                        "steelGrade": steelGradeController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "cooling_tower",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Cooling Tower Drawing"),
                 ),
               ),
             ],
@@ -200,6 +238,8 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(

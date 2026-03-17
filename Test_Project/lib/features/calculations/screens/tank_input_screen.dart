@@ -13,6 +13,9 @@ class _TankInputScreenState extends State<TankInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -20,7 +23,6 @@ class _TankInputScreenState extends State<TankInputScreen> {
   /// TANK
   final capacityController = TextEditingController();
   final waterDepthController = TextEditingController();
-
   final diameterController = TextEditingController();
   final heightController = TextEditingController();
   final wallThicknessController = TextEditingController();
@@ -38,9 +40,28 @@ class _TankInputScreenState extends State<TankInputScreen> {
   String tankType = "Overhead Tank";
   String concreteGrade = "M25";
 
+  /// DRAWING
   String scale = "1:50";
   String sheetSize = "A1";
   String detailLevel = "Construction";
+
+  @override
+  void dispose() {
+    projectNameController.dispose();
+    locationController.dispose();
+    capacityController.dispose();
+    waterDepthController.dispose();
+    diameterController.dispose();
+    heightController.dispose();
+    wallThicknessController.dispose();
+    rebarDiameterController.dispose();
+    rebarSpacingController.dispose();
+    inletPipeController.dispose();
+    outletPipeController.dispose();
+    overflowPipeController.dispose();
+    drainPipeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,24 +70,19 @@ class _TankInputScreenState extends State<TankInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               sectionTitle("Project Information"),
-
-              field(projectNameController, "Project Name"),
-              field(locationController, "Location"),
+              field(projectNameController, "Project Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// TANK TYPE
               sectionTitle("Tank Type"),
-
               dropdown("Tank Type", tankType, [
                 "Underground Tank",
                 "Overhead Tank",
@@ -77,7 +93,6 @@ class _TankInputScreenState extends State<TankInputScreen> {
 
               /// CAPACITY
               sectionTitle("Tank Capacity"),
-
               field(capacityController, "Tank Capacity (m³)"),
               field(waterDepthController, "Water Depth (m)"),
 
@@ -85,7 +100,6 @@ class _TankInputScreenState extends State<TankInputScreen> {
 
               /// GEOMETRY
               sectionTitle("Tank Geometry"),
-
               field(diameterController, "Tank Diameter (m)"),
               field(heightController, "Tank Height (m)"),
               field(wallThicknessController, "Wall Thickness (mm)"),
@@ -94,7 +108,6 @@ class _TankInputScreenState extends State<TankInputScreen> {
 
               /// STRUCTURAL
               sectionTitle("Structural Parameters"),
-
               dropdown(
                 "Concrete Grade",
                 concreteGrade,
@@ -109,7 +122,6 @@ class _TankInputScreenState extends State<TankInputScreen> {
 
               /// PIPES
               sectionTitle("Pipe Connections"),
-
               field(inletPipeController, "Inlet Pipe Diameter (mm)"),
               field(outletPipeController, "Outlet Pipe Diameter (mm)"),
               field(overflowPipeController, "Overflow Pipe Diameter (mm)"),
@@ -119,7 +131,6 @@ class _TankInputScreenState extends State<TankInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:20",
                 "1:50",
@@ -141,56 +152,87 @@ class _TankInputScreenState extends State<TankInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Tank Drawing"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                      },
+                          final data = {
+                            "project": {
+                              "name": projectNameController.text,
+                              "location": locationController.text,
+                            },
+                            "tank": {
+                              "type": tankType,
+                              "capacity": capacityController.text,
+                              "waterDepth": waterDepthController.text,
+                              "diameter": diameterController.text,
+                              "height": heightController.text,
+                              "wallThickness": wallThicknessController.text,
+                            },
+                            "structure": {
+                              "concreteGrade": concreteGrade,
+                              "rebarDiameter": rebarDiameterController.text,
+                              "rebarSpacing": rebarSpacingController.text,
+                            },
+                            "pipes": {
+                              "inlet": inletPipeController.text,
+                              "outlet": outletPipeController.text,
+                              "overflow": overflowPipeController.text,
+                              "drain": drainPipeController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "tank": {
-                        "type": tankType,
-                        "capacity": capacityController.text,
-                        "waterDepth": waterDepthController.text,
-                        "diameter": diameterController.text,
-                        "height": heightController.text,
-                        "wallThickness": wallThicknessController.text,
-                      },
+                          try {
+                            final res = await controller
+                                .generateDrawingFromInputs(
+                                  type: "tank",
+                                  inputData: data,
+                                );
 
-                      "structure": {
-                        "concreteGrade": concreteGrade,
-                        "rebarDiameter": rebarDiameterController.text,
-                        "rebarSpacing": rebarSpacingController.text,
-                      },
+                            setState(() => isLoading = false);
 
-                      "pipes": {
-                        "inlet": inletPipeController.text,
-                        "outlet": outletPipeController.text,
-                        "overflow": overflowPipeController.text,
-                        "drain": drainPipeController.text,
-                      },
+                            Get.snackbar(
+                              res["success"] == true ? "Success" : "Error",
+                              res["message"] ?? "Something went wrong",
+                              backgroundColor: res["success"] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                              colorText: Colors.white,
+                            );
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "tank",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Tank Drawing"),
                 ),
               ),
             ],
@@ -199,6 +241,8 @@ class _TankInputScreenState extends State<TankInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -210,13 +254,13 @@ class _TankInputScreenState extends State<TankInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
-        validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        validator: (v) => v == null || v.isEmpty ? "Required" : null,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -233,7 +277,7 @@ class _TankInputScreenState extends State<TankInputScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField(
+      child: DropdownButtonFormField<String>(
         value: value,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))

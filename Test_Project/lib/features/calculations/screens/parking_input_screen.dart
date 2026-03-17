@@ -13,6 +13,9 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  /// ================= LOADER =================
+  bool isLoading = false;
+
   /// PROJECT
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
@@ -51,24 +54,20 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               sectionTitle("Project Information"),
 
-              field(projectNameController, "Project Name"),
-              field(locationController, "Location"),
+              field(projectNameController, "Project Name", isNumber: false),
+              field(locationController, "Location", isNumber: false),
 
               const SizedBox(height: 20),
 
               /// PARKING TYPE
               sectionTitle("Parking Type"),
-
               dropdown("Parking Type", parkingType, [
                 "Surface Parking",
                 "Basement Parking",
@@ -79,7 +78,6 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
 
               /// SITE
               sectionTitle("Site Geometry"),
-
               field(lengthController, "Parking Length (m)"),
               field(widthController, "Parking Width (m)"),
 
@@ -94,7 +92,6 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
 
               /// PARKING SLOTS
               sectionTitle("Parking Layout"),
-
               field(slotWidthController, "Parking Slot Width (m)"),
               field(slotLengthController, "Parking Slot Length (m)"),
               field(slotCountController, "Number of Parking Slots"),
@@ -110,7 +107,6 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
 
               /// CIRCULATION
               sectionTitle("Circulation"),
-
               field(laneWidthController, "Driving Lane Width (m)"),
               field(entryWidthController, "Entry Gate Width (m)"),
               field(exitWidthController, "Exit Gate Width (m)"),
@@ -119,7 +115,6 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
 
               /// MULTI LEVEL
               sectionTitle("Multi-Level Parking"),
-
               field(floorsController, "Number of Floors"),
               field(rampWidthController, "Ramp Width (m)"),
               field(rampSlopeController, "Ramp Slope (%)"),
@@ -128,20 +123,17 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
 
               /// DRAWING
               sectionTitle("Drawing Settings"),
-
               dropdown("Scale", scale, [
                 "1:100",
                 "1:200",
                 "1:500",
               ], (v) => setState(() => scale = v!)),
-
               dropdown("Sheet Size", sheetSize, [
                 "A0",
                 "A1",
                 "A2",
                 "A3",
               ], (v) => setState(() => sheetSize = v!)),
-
               dropdown("Detail Level", detailLevel, [
                 "Concept",
                 "Standard",
@@ -150,60 +142,101 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
 
               const SizedBox(height: 40),
 
+              /// ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 height: 55,
-
                 child: ElevatedButton(
-                  child: const Text("Generate Parking Layout"),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
 
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
+                          setState(() => isLoading = true);
 
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                      },
+                          Map<String, dynamic> data = {
+                            "project": {
+                              "name": projectNameController.text,
+                              "location": locationController.text,
+                            },
+                            "site": {
+                              "length": lengthController.text,
+                              "width": widthController.text,
+                              "orientation": orientation,
+                            },
+                            "parking": {
+                              "type": parkingType,
+                              "slotWidth": slotWidthController.text,
+                              "slotLength": slotLengthController.text,
+                              "slots": slotCountController.text,
+                              "angle": parkingAngle,
+                            },
+                            "circulation": {
+                              "laneWidth": laneWidthController.text,
+                              "entryWidth": entryWidthController.text,
+                              "exitWidth": exitWidthController.text,
+                            },
+                            "multilevel": {
+                              "floors": floorsController.text,
+                              "rampWidth": rampWidthController.text,
+                              "rampSlope": rampSlopeController.text,
+                            },
+                            "drawing": {
+                              "scale": scale,
+                              "sheetSize": sheetSize,
+                              "detailLevel": detailLevel,
+                            },
+                          };
 
-                      "site": {
-                        "length": lengthController.text,
-                        "width": widthController.text,
-                        "orientation": orientation,
-                      },
+                          try {
+                            final response = await controller
+                                .generateDrawingFromInputs(
+                                  type: "parking",
+                                  inputData: data,
+                                );
 
-                      "parking": {
-                        "type": parkingType,
-                        "slotWidth": slotWidthController.text,
-                        "slotLength": slotLengthController.text,
-                        "slots": slotCountController.text,
-                        "angle": parkingAngle,
-                      },
+                            setState(() => isLoading = false);
 
-                      "circulation": {
-                        "laneWidth": laneWidthController.text,
-                        "entryWidth": entryWidthController.text,
-                        "exitWidth": exitWidthController.text,
-                      },
+                            if (response["success"] == true) {
+                              Get.snackbar(
+                                "Success",
+                                response["message"] ??
+                                    "Drawing generated successfully",
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            } else {
+                              Get.snackbar(
+                                "Error",
+                                response["message"] ?? "Something went wrong",
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
 
-                      "multilevel": {
-                        "floors": floorsController.text,
-                        "rampWidth": rampWidthController.text,
-                        "rampSlope": rampSlopeController.text,
-                      },
-
-                      "drawing": {
-                        "scale": scale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: "parking",
-                      inputData: data,
-                    );
-                  },
+                            Get.snackbar(
+                              "Error",
+                              e.toString(),
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text("Generate Parking Layout"),
                 ),
               ),
             ],
@@ -212,6 +245,8 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
       ),
     );
   }
+
+  /// ================= COMMON =================
 
   Widget sectionTitle(String title) {
     return Padding(
@@ -223,13 +258,13 @@ class _ParkingInputScreenState extends State<ParkingInputScreen> {
     );
   }
 
-  Widget field(TextEditingController c, String label) {
+  Widget field(TextEditingController c, String label, {bool isNumber = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: c,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
