@@ -212,7 +212,7 @@ clear structural geometry, annotations, and blueprint style.
         inputData: {"prompt": aiPrompt, "meta_data": inputData},
       );
 
-      if (response != null && response["image"] != null) {
+      if (response["image"] != null) {
         imageUrl.value = response["image"];
 
         statusMessage.value = "Drawing Generated Successfully";
