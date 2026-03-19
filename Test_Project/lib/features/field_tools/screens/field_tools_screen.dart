@@ -7,22 +7,104 @@ class FieldToolsScreen extends StatelessWidget {
   const FieldToolsScreen({super.key});
 
   static const Color primaryBlue = Color(0xFF1E3A8A);
-  static const Color bgColor = Color(0xFFF8FAFC);
+  static const Color accentBlue = Color(0xFF3B82F6);
 
   @override
   Widget build(BuildContext context) {
-    final FieldToolsController controller = Get.find();
-    final double width = MediaQuery.of(context).size.width;
+    final controller = Get.find<FieldToolsController>();
 
-    final bool isDesktop = width > 900;
-    final bool isTablet = width > 600 && width <= 900;
+    return Scaffold(
+      body: Container(
+        /// 🔥 GRADIENT BACKGROUND
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primaryBlue, accentBlue],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
 
-    int crossAxisCount = 2;
-    if (isTablet) crossAxisCount = 3;
-    if (isDesktop) crossAxisCount = 6;
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: SizedBox(
+              width: double.infinity,
 
-    final tools = [
-      /// ---------------- MEASUREMENT ----------------
+              child: Container(
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
+
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+
+                    int crossAxisCount = 2;
+                    if (width > 600) crossAxisCount = 3;
+                    if (width > 900) crossAxisCount = 4;
+                    if (width > 1200) crossAxisCount = 6;
+
+                    final tools = _buildTools(controller);
+
+                    return Column(
+                      children: [
+                        /// HEADER (INSIDE CARD)
+                        const Text(
+                          "FIELD TOOLS",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: primaryBlue,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          "Digital instruments for civil engineering tasks",
+                          style: TextStyle(color: primaryBlue.withOpacity(0.5)),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        /// GRID (ALL DEVICES)
+                        Expanded(
+                          child: GridView.builder(
+                            itemCount: tools.length,
+
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 1,
+                                ),
+
+                            itemBuilder: (context, index) {
+                              return tools[index];
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ================= TOOLS =================
+  List<Widget> _buildTools(FieldToolsController controller) {
+    return [
       ToolCard(
         title: "Measure",
         subtitle: "Distance",
@@ -45,18 +127,14 @@ class FieldToolsScreen extends StatelessWidget {
         title: "Area",
         subtitle: "Plot Size",
         icon: Icons.square_foot_rounded,
-        isLocked: true,
-        onTap: () {},
+        onTap: controller.openAreaTool,
       ),
       ToolCard(
         title: "Slope",
         subtitle: "Gradient",
         icon: Icons.show_chart_rounded,
-        isLocked: true,
-        onTap: () {},
+        onTap: controller.openSlopeTool,
       ),
-
-      /// ---------------- CALCULATORS ----------------
       ToolCard(
         title: "Converter",
         subtitle: "Unit Scaling",
@@ -75,8 +153,6 @@ class FieldToolsScreen extends StatelessWidget {
         icon: Icons.reorder_rounded,
         onTap: controller.openSteelCalc,
       ),
-
-      /// ---------------- DOCUMENTATION ----------------
       ToolCard(
         title: "Photos",
         subtitle: "Site Media",
@@ -102,81 +178,5 @@ class FieldToolsScreen extends StatelessWidget {
         onTap: controller.openSunSeeker,
       ),
     ];
-
-    return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "FIELD TOOLS",
-          style: TextStyle(
-            color: primaryBlue,
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-            letterSpacing: 2,
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 30),
-
-            /// Desktop → horizontal toolbar
-            if (isDesktop)
-              SizedBox(
-                height: 110,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: tools.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) => tools[index],
-                ),
-              )
-            /// Mobile + Tablet → Grid
-            else
-              Expanded(
-                child: GridView.builder(
-                  itemCount: tools.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    mainAxisSpacing: 18,
-                    crossAxisSpacing: 18,
-                    childAspectRatio: 1,
-                  ),
-                  itemBuilder: (context, index) {
-                    return tools[index];
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        const Text(
-          "Select Utility",
-          style: TextStyle(
-            color: primaryBlue,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Digital instruments for civil engineering tasks",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: primaryBlue.withOpacity(0.5), fontSize: 14),
-        ),
-      ],
-    );
   }
 }

@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:test_project/core/utils/api_config.dart';
 
 class AiRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  static const String serverUrl = "http://localhost:3000";
 
   /// =========================
   /// AI CHAT
@@ -32,7 +31,7 @@ class AiRepository {
         });
 
     final response = await http.post(
-      Uri.parse("$serverUrl/chat"),
+      Uri.parse("${ApiConfig.baseUrl}/chat"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"message": message}),
     );
@@ -66,15 +65,17 @@ class AiRepository {
     required Map<String, dynamic> inputData,
   }) async {
     final response = await http.post(
-      Uri.parse("http://localhost:3000/generate-drawing"),
+      Uri.parse("${ApiConfig.baseUrl}/generate-drawing"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(inputData),
     );
 
+    print(jsonEncode(inputData));
+
     final data = jsonDecode(response.body);
 
-    print("AI SERVER RESPONSE:");
-    print(data);
+    // print("AI SERVER RESPONSE:");
+    // print(data);
 
     return data;
   }
@@ -87,7 +88,7 @@ class AiRepository {
     required Map<String, dynamic> data,
   }) async {
     final response = await http.post(
-      Uri.parse("$serverUrl/calculation"),
+      Uri.parse("${ApiConfig.baseUrl}/calculation"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(data),
     );

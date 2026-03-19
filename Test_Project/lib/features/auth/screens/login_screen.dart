@@ -12,7 +12,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final AuthController controller = Get.find();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -25,8 +26,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   // Personalization Theme
   static const Color primaryBlue = Color(0xFF1E3A8A); // Deep Blue
-  static const Color accentBlue = Color(0xFF3B82F6);  // Sky Blue
-  static const Color bgColor = Color(0xFFF8FAFC);     // Soft White
+  static const Color accentBlue = Color(0xFF3B82F6); // Sky Blue
+  static const Color bgColor = Color(0xFFF8FAFC); // Soft White
   static const Color borderColor = Color(0xFFE5E7EB); // Light Gray
 
   @override
@@ -82,18 +83,34 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         color: Colors.white,
                         shape: BoxShape.circle,
                         boxShadow: [
-                          BoxShadow(color: primaryBlue.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))
+                          BoxShadow(
+                            color: primaryBlue.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
                         ],
                         border: Border.all(color: borderColor),
                       ),
-                      child: const Icon(Icons.architecture_rounded, size: 60, color: primaryBlue),
+                      child: const Icon(
+                        Icons.architecture_rounded,
+                        size: 60,
+                        color: primaryBlue,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     const Text(
                       "Engineering Portal",
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: primaryBlue, letterSpacing: -0.5),
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: primaryBlue,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                    const Text("Sign in to manage your site projects", style: TextStyle(color: Colors.blueGrey, fontSize: 14)),
+                    const Text(
+                      "Sign in to manage your site projects",
+                      style: TextStyle(color: Colors.blueGrey, fontSize: 14),
+                    ),
                     const SizedBox(height: 48),
 
                     /// EMAIL FIELD
@@ -119,7 +136,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {},
-                        child: const Text("Forgot Password?", style: TextStyle(color: accentBlue, fontWeight: FontWeight.w600, fontSize: 13)),
+                        child: const Text(
+                          "Forgot Password?",
+                          style: TextStyle(
+                            color: accentBlue,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -131,26 +155,34 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: loading ? () {} : _login, // Prevents multiple calls
+                          onPressed: loading
+                              ? () {}
+                              : _login, // Prevents multiple calls
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryBlue,
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           child: loading
                               ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
                               : const Text(
-                            "SIGN IN",
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-                          ),
+                                  "SIGN IN",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
                         ),
                       );
                     }),
@@ -161,10 +193,19 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("New to the platform?", style: TextStyle(color: primaryBlue.withOpacity(0.6))),
+                        Text(
+                          "New to the platform?",
+                          style: TextStyle(color: primaryBlue.withOpacity(0.6)),
+                        ),
                         TextButton(
                           onPressed: () => Get.toNamed(RouteConstants.signup),
-                          child: const Text("Create Account", style: TextStyle(color: accentBlue, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            "Create Account",
+                            style: TextStyle(
+                              color: accentBlue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -188,7 +229,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: primaryBlue)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: primaryBlue,
+          ),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -197,12 +245,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           cursorColor: accentBlue,
           style: const TextStyle(fontSize: 15, color: primaryBlue),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: primaryBlue.withOpacity(0.5), size: 20),
+            prefixIcon: Icon(
+              icon,
+              color: primaryBlue.withOpacity(0.5),
+              size: 20,
+            ),
             suffixIcon: isPassword
                 ? IconButton(
-              icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.grey, size: 20),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-            )
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                  )
                 : null,
             filled: true,
             fillColor: Colors.white,

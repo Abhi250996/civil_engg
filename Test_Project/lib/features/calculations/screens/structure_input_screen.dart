@@ -14,445 +14,249 @@ class _StructureInputScreenState extends State<StructureInputScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   static const primaryBlue = Color(0xFF1E3A8A);
-  static const accentBlue = Color(0xFF3B82F6);
   static const bgColor = Color(0xFFF8FAFC);
 
-  /// PROJECT
-  final projectNameController = TextEditingController();
-  final locationController = TextEditingController();
-
-  /// SITE
-  final lengthController = TextEditingController();
-  final widthController = TextEditingController();
-
-  /// REGULATIONS
-  final frontSetbackController = TextEditingController(text: "1.5");
-  final rearSetbackController = TextEditingController(text: "1.0");
-  final sideSetbackController = TextEditingController(text: "1.0");
-
-  /// BUILDING
-  final floorsController = TextEditingController(text: "1");
-  final roomsController = TextEditingController(text: "2");
-  final floorHeightController = TextEditingController(text: "3.0");
-
-  /// STRUCTURE
-  final soilController = TextEditingController(text: "150");
-  final seismicZoneController = TextEditingController(text: "3");
-  final loadController = TextEditingController(text: "50");
-
-  /// ROAD / INDUSTRY
-  final thicknessController = TextEditingController(text: "200");
-
-  /// DROPDOWNS
-  String orientation = "North";
-  String unitSystem = "Metric";
-  String drawingScale = "1:100";
-  String sheetSize = "A1";
-  String detailLevel = "Standard";
-
   late String structureType;
+
+  final Map<String, TextEditingController> inputs = {};
+
+  bool isLoading = false;
+
+  /// ================= STRUCTURE FIELD CONFIG =================
+
+  final Map<String, List<Map<String, String>>> structureFields = {
+    "building": [
+      {"key": "plotLength", "label": "Plot Length", "unit": "m"},
+      {"key": "plotWidth", "label": "Plot Width", "unit": "m"},
+      {"key": "floors", "label": "Number of Floors", "unit": ""},
+      {"key": "rooms", "label": "Rooms / BHK", "unit": ""},
+      {"key": "floorHeight", "label": "Floor Height", "unit": "m"},
+      {"key": "soil", "label": "Soil Bearing Capacity", "unit": "kN/m²"},
+    ],
+    "road": [
+      {"key": "roadLength", "label": "Road Length", "unit": "km"},
+      {"key": "carriagewayWidth", "label": "Carriageway Width", "unit": "m"},
+      {"key": "pavementThickness", "label": "Pavement Thickness", "unit": "mm"},
+      {"key": "lanes", "label": "Number of Lanes", "unit": ""},
+    ],
+    "bridge": [
+      {"key": "spanLength", "label": "Span Length", "unit": "m"},
+      {"key": "deckWidth", "label": "Deck Width", "unit": "m"},
+      {"key": "pierSpacing", "label": "Pier Spacing", "unit": "m"},
+      {"key": "designLoad", "label": "Design Load", "unit": "kN"},
+    ],
+    "tank": [
+      {"key": "diameter", "label": "Tank Diameter", "unit": "m"},
+      {"key": "height", "label": "Tank Height", "unit": "m"},
+      {"key": "capacity", "label": "Capacity", "unit": "m³"},
+    ],
+    "pipeline": [
+      {"key": "diameter", "label": "Pipe Diameter", "unit": "mm"},
+      {"key": "length", "label": "Pipeline Length", "unit": "km"},
+      {"key": "pressure", "label": "Pressure", "unit": "bar"},
+    ],
+    "telecom": [
+      {"key": "height", "label": "Tower Height", "unit": "m"},
+      {"key": "baseWidth", "label": "Base Width", "unit": "m"},
+      {"key": "windLoad", "label": "Wind Load", "unit": "kN/m²"},
+    ],
+    "warehouse": [
+      {"key": "length", "label": "Warehouse Length", "unit": "m"},
+      {"key": "width", "label": "Warehouse Width", "unit": "m"},
+      {"key": "bays", "label": "Number of Bays", "unit": ""},
+    ],
+    "retaining_wall": [
+      {"key": "wallHeight", "label": "Wall Height", "unit": "m"},
+      {"key": "baseWidth", "label": "Base Width", "unit": "m"},
+      {"key": "soilPressure", "label": "Soil Pressure", "unit": "kN/m²"},
+    ],
+    "chimney": [
+      {"key": "height", "label": "Chimney Height", "unit": "m"},
+      {"key": "diameter", "label": "Chimney Diameter", "unit": "m"},
+      {"key": "wallThickness", "label": "Wall Thickness", "unit": "mm"},
+    ],
+  };
+
+  /// ================= INIT =================
 
   @override
   void initState() {
     super.initState();
-    structureType = (Get.arguments?["type"] ?? "building").toString();
+
+    structureType = Get.arguments?["type"] ?? "building";
+
+    final fields = structureFields[structureType] ?? [];
+
+    for (final f in fields) {
+      inputs[f["key"]!] = TextEditingController();
+    }
+
+    inputs["projectName"] = TextEditingController();
+    inputs["location"] = TextEditingController();
   }
+
+  @override
+  void dispose() {
+    for (var c in inputs.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  /// ================= UI =================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         centerTitle: true,
         title: Text(
-          "${structureType.toUpperCase()} DESIGNER",
+          structureType.toUpperCase(),
           style: const TextStyle(
             color: primaryBlue,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: primaryBlue),
+          icon: const Icon(Icons.arrow_back, color: primaryBlue),
           onPressed: () => Get.back(),
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          bool isDesktop = constraints.maxWidth > 900;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Center(
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: isDesktop ? 1100 : 600),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      /// PROJECT
-                      _sectionTitle("Project Information"),
-                      _buildResponsiveLayout(
-                        isDesktop: isDesktop,
-                        children: [
-                          _buildTextField(
-                            projectNameController,
-                            "Project Name",
-                            Icons.work,
-                          ),
-                          _buildTextField(
-                            locationController,
-                            "Location",
-                            Icons.location_city,
-                          ),
-                          _buildDropdown(
-                            "Units",
-                            unitSystem,
-                            ["Metric", "Imperial"],
-                            (v) => setState(() => unitSystem = v!),
-                          ),
-                        ],
-                      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
 
-                      const SizedBox(height: 25),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _title("Project Information"),
+              _textField("Project Name", "projectName", false),
+              _textField("Location", "location", false),
 
-                      /// SITE
-                      _sectionTitle("Site Geometry"),
-                      _buildResponsiveLayout(
-                        isDesktop: isDesktop,
-                        children: [
-                          _buildTextField(
-                            lengthController,
-                            "Plot Length (m)",
-                            Icons.straighten,
-                            isNum: true,
-                          ),
-                          _buildTextField(
-                            widthController,
-                            "Plot Width (m)",
-                            Icons.square_foot,
-                            isNum: true,
-                          ),
-                          _buildDropdown(
-                            "Orientation",
-                            orientation,
-                            ["North", "South", "East", "West"],
-                            (v) => setState(() => orientation = v!),
-                          ),
-                        ],
-                      ),
+              const SizedBox(height: 30),
 
-                      const SizedBox(height: 25),
+              _title("Structure Parameters"),
+              ..._dynamicFields(),
 
-                      /// SETBACKS
-                      if (structureType == "building") ...[
-                        _sectionTitle("Regulatory Setbacks"),
-                        _buildResponsiveLayout(
-                          isDesktop: isDesktop,
-                          children: [
-                            _buildTextField(
-                              frontSetbackController,
-                              "Front Setback (m)",
-                              Icons.arrow_upward,
-                              isNum: true,
-                            ),
-                            _buildTextField(
-                              rearSetbackController,
-                              "Rear Setback (m)",
-                              Icons.arrow_downward,
-                              isNum: true,
-                            ),
-                            _buildTextField(
-                              sideSetbackController,
-                              "Side Setback (m)",
-                              Icons.arrow_back,
-                              isNum: true,
-                            ),
-                          ],
-                        ),
-                      ],
+              const SizedBox(height: 40),
 
-                      const SizedBox(height: 25),
-
-                      /// BUILDING PROGRAM
-                      if (structureType == "building") ...[
-                        _sectionTitle("Building Program"),
-                        _buildResponsiveLayout(
-                          isDesktop: isDesktop,
-                          children: [
-                            _buildTextField(
-                              floorsController,
-                              "Floors",
-                              Icons.layers,
-                              isNum: true,
-                            ),
-                            _buildTextField(
-                              roomsController,
-                              "Rooms / BHK",
-                              Icons.bed,
-                              isNum: true,
-                            ),
-                            _buildTextField(
-                              floorHeightController,
-                              "Floor Height (m)",
-                              Icons.height,
-                              isNum: true,
-                            ),
-                          ],
-                        ),
-                      ],
-
-                      const SizedBox(height: 25),
-
-                      /// STRUCTURE
-                      _sectionTitle("Structural Parameters"),
-                      _buildResponsiveLayout(
-                        isDesktop: isDesktop,
-                        children: [
-                          _buildTextField(
-                            soilController,
-                            "Soil Bearing Capacity (kN/m²)",
-                            Icons.terrain,
-                            isNum: true,
-                          ),
-                          _buildTextField(
-                            seismicZoneController,
-                            "Seismic Zone",
-                            Icons.warning,
-                            isNum: true,
-                          ),
-                          _buildTextField(
-                            loadController,
-                            "Design Load",
-                            Icons.fitness_center,
-                            isNum: true,
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 25),
-
-                      /// ROAD
-                      if (structureType == "road") ...[
-                        _sectionTitle("Road Parameters"),
-                        _buildResponsiveLayout(
-                          isDesktop: isDesktop,
-                          children: [
-                            _buildTextField(
-                              lengthController,
-                              "Road Length (km)",
-                              Icons.add_road,
-                              isNum: true,
-                            ),
-                            _buildTextField(
-                              widthController,
-                              "Carriageway Width (m)",
-                              Icons.width_full,
-                              isNum: true,
-                            ),
-                            _buildTextField(
-                              thicknessController,
-                              "Pavement Thickness (mm)",
-                              Icons.layers,
-                              isNum: true,
-                            ),
-                          ],
-                        ),
-                      ],
-
-                      const SizedBox(height: 25),
-
-                      /// DRAWING SETTINGS
-                      _sectionTitle("Drawing Preferences"),
-                      _buildResponsiveLayout(
-                        isDesktop: isDesktop,
-                        children: [
-                          _buildDropdown(
-                            "Scale",
-                            drawingScale,
-                            ["1:50", "1:100", "1:200"],
-                            (v) => setState(() => drawingScale = v!),
-                          ),
-                          _buildDropdown(
-                            "Sheet Size",
-                            sheetSize,
-                            ["A0", "A1", "A2", "A3"],
-                            (v) => setState(() => sheetSize = v!),
-                          ),
-                          _buildDropdown(
-                            "Detail Level",
-                            detailLevel,
-                            ["Concept", "Standard", "Construction"],
-                            (v) => setState(() => detailLevel = v!),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 400),
-                          child: _buildGenerateButton(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  /// BUTTON
-  Widget _buildGenerateButton() {
-    return SizedBox(
-      height: 60,
-      child: Obx(
-        () => ElevatedButton.icon(
-          icon: controller.isLoading.value
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Icon(Icons.architecture),
-          label: Text(
-            controller.isLoading.value
-                ? "PROCESSING..."
-                : "GENERATE PROFESSIONAL DRAWING",
-          ),
-          onPressed: controller.isLoading.value
-              ? null
-              : () {
-                  if (_formKey.currentState!.validate()) {
-                    Map<String, dynamic> data = {
-                      "project": {
-                        "name": projectNameController.text,
-                        "location": locationController.text,
-                        "unit": unitSystem,
-                      },
-
-                      "site": {
-                        "length": lengthController.text,
-                        "width": widthController.text,
-                        "orientation": orientation,
-                      },
-
-                      "regulations": {
-                        "frontSetback": frontSetbackController.text,
-                        "rearSetback": rearSetbackController.text,
-                        "sideSetback": sideSetbackController.text,
-                      },
-
-                      "building": {
-                        "floors": floorsController.text,
-                        "rooms": roomsController.text,
-                        "floorHeight": floorHeightController.text,
-                      },
-
-                      "structure": {
-                        "soilBearingCapacity": soilController.text,
-                        "seismicZone": seismicZoneController.text,
-                        "designLoad": loadController.text,
-                      },
-
-                      "drawing": {
-                        "scale": drawingScale,
-                        "sheetSize": sheetSize,
-                        "detailLevel": detailLevel,
-                      },
-                    };
-
-                    controller.generateDrawingFromInputs(
-                      type: structureType,
-                      inputData: data,
-                    );
-                  }
-                },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primaryBlue,
-            foregroundColor: Colors.white,
+              Center(child: _generateButton()),
+            ],
           ),
         ),
       ),
     );
   }
 
-  /// COMPONENTS
+  /// ================= DYNAMIC FIELDS =================
 
-  Widget _sectionTitle(String title) {
+  List<Widget> _dynamicFields() {
+    final fields = structureFields[structureType] ?? [];
+
+    return fields.map((field) {
+      final key = field["key"]!;
+      final label = field["label"]!;
+      final unit = field["unit"]!;
+
+      return _textField(unit.isEmpty ? label : "$label ($unit)", key, true);
+    }).toList();
+  }
+
+  /// ================= BUTTON =================
+
+  Widget _generateButton() {
+    return SizedBox(
+      width: 320,
+      height: 55,
+      child: ElevatedButton.icon(
+        icon: isLoading
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Icon(Icons.architecture),
+
+        label: Text(isLoading ? "GENERATING..." : "GENERATE DRAWING"),
+
+        onPressed: isLoading
+            ? null
+            : () async {
+                if (!_formKey.currentState!.validate()) return;
+
+                setState(() => isLoading = true);
+
+                final data = {
+                  for (var e in inputs.entries) e.key: e.value.text,
+                };
+
+                try {
+                  final res = await controller.generateDrawingFromInputs(
+                    type: structureType,
+                    inputData: data,
+                  );
+
+                  setState(() => isLoading = false);
+
+                  Get.snackbar(
+                    res["success"] == true ? "Success" : "Error",
+                    res["message"] ?? "Something went wrong",
+                    backgroundColor: res["success"] == true
+                        ? Colors.green
+                        : Colors.red,
+                    colorText: Colors.white,
+                  );
+                } catch (e) {
+                  setState(() => isLoading = false);
+
+                  Get.snackbar(
+                    "Error",
+                    e.toString(),
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                }
+              },
+
+        style: ElevatedButton.styleFrom(backgroundColor: primaryBlue),
+      ),
+    );
+  }
+
+  /// ================= COMMON FIELD =================
+
+  Widget _textField(String label, String key, bool isNumber) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: inputs[key],
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        validator: (v) => v == null || v.isEmpty ? "Required" : null,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
+    );
+  }
+
+  /// ================= TITLE =================
+
+  Widget _title(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
-        title.toUpperCase(),
-        style: const TextStyle(fontWeight: FontWeight.w900, color: primaryBlue),
+        text.toUpperCase(),
+        style: const TextStyle(fontWeight: FontWeight.bold, color: primaryBlue),
       ),
-    );
-  }
-
-  Widget _buildTextField(
-    TextEditingController ctrl,
-    String label,
-    IconData icon, {
-    bool isNum = false,
-  }) {
-    return TextFormField(
-      controller: ctrl,
-      keyboardType: isNum ? TextInputType.number : TextInputType.text,
-      validator: (v) => v == null || v.isEmpty ? "Required" : null,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: accentBlue),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  Widget _buildDropdown(
-    String label,
-    String value,
-    List<String> items,
-    Function(String?) onChanged,
-  ) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      items: items
-          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-          .toList(),
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildResponsiveLayout({
-    required bool isDesktop,
-    required List<Widget> children,
-  }) {
-    if (isDesktop) {
-      return Row(
-        children: children
-            .map(
-              (c) => Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: c,
-                ),
-              ),
-            )
-            .toList(),
-      );
-    }
-    return Column(
-      children: children
-          .map(
-            (c) =>
-                Padding(padding: const EdgeInsets.only(bottom: 12), child: c),
-          )
-          .toList(),
     );
   }
 }

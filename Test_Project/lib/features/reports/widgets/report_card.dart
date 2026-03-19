@@ -13,159 +13,160 @@ class ReportCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  // Color Tokens
-  static const Color primaryBlue = Color(0xFF1E3A8A); // Deep Blue
-  static const Color accentBlue = Color(0xFF3B82F6);  // Sky Blue
-  static const Color borderColor = Color(0xFFE5E7EB); // Light Gray
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color accentBlue = Color(0xFF3B82F6);
+  static const Color borderColor = Color(0xFFE5E7EB);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: primaryBlue.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onOpen,
-          hoverColor: accentBlue.withOpacity(0.02),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: onOpen,
+      borderRadius: BorderRadius.circular(12),
+
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
+        ),
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// HEADER
+            Row(
               children: [
-                /// HEADER: Title + Delete
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: accentBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.picture_as_pdf_rounded, size: 22, color: accentBlue),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            report.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: primaryBlue,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                          Text(
-                            report.reportType.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: primaryBlue.withOpacity(0.4),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 20),
-                      onPressed: onDelete,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: accentBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.picture_as_pdf_rounded,
+                    size: 18,
+                    color: accentBlue,
+                  ),
                 ),
 
-                const SizedBox(height: 14),
+                const SizedBox(width: 8),
 
-                /// METADATA SECTION
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        report.description,
-                        maxLines: 2,
+                        report.title,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: primaryBlue.withOpacity(0.7), height: 1.4),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: primaryBlue,
+                        ),
                       ),
-                      const Spacer(),
-                      _infoBadge(Icons.person_outline, report.author ?? "Unknown"),
+                      Text(
+                        report.reportType.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: primaryBlue.withOpacity(0.5),
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
-                const Divider(height: 24, thickness: 0.5),
-
-                /// FOOTER: Status + Date
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _statusChip(report.status ?? "Draft"),
-                    Text(
-                      report.createdAt.toLocal().toString().split(" ")[0],
-                      style: TextStyle(fontSize: 10, color: primaryBlue.withOpacity(0.4), fontWeight: FontWeight.bold),
-                    ),
-                  ],
+                IconButton(
+                  onPressed: onDelete,
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: Colors.redAccent,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
-          ),
+
+            const SizedBox(height: 10),
+
+            /// DESCRIPTION
+            Expanded(
+              child: Text(
+                report.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: primaryBlue.withOpacity(0.7),
+                  height: 1.3,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            /// AUTHOR
+            Row(
+              children: [
+                const Icon(Icons.person_outline, size: 12, color: accentBlue),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    report.author ?? "Unknown",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: primaryBlue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            /// FOOTER
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _status(report.status ?? "Draft"),
+                Text(
+                  report.createdAt.toLocal().toString().split(" ")[0],
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: primaryBlue.withOpacity(0.4),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _infoBadge(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: accentBlue),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: primaryBlue),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _status(String status) {
+    final isApproved = status.toLowerCase() == "approved";
 
-  Widget _statusChip(String status) {
-    bool isApproved = status.toLowerCase() == 'approved';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isApproved ? Colors.green.withOpacity(0.1) : accentBlue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
+        color: isApproved
+            ? Colors.green.withOpacity(0.1)
+            : accentBlue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         status.toUpperCase(),
         style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w900,
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
           color: isApproved ? Colors.green : accentBlue,
-          letterSpacing: 0.5,
         ),
       ),
     );

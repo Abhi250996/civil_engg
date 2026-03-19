@@ -4,7 +4,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:test_project/features/field_tools/screens/site_diary_list_screen.dart';
+import 'package:test_project/core/utils/app_scaffold.dart';
+import 'site_diary_list_screen.dart';
 
 class SiteDiaryScreen extends StatefulWidget {
   const SiteDiaryScreen({super.key});
@@ -14,12 +15,15 @@ class SiteDiaryScreen extends StatefulWidget {
 }
 
 class _SiteDiaryScreenState extends State<SiteDiaryScreen> {
-  final TextEditingController projectController = TextEditingController();
-  final TextEditingController engineerController = TextEditingController();
-  final TextEditingController labourController = TextEditingController();
-  final TextEditingController workController = TextEditingController();
-  final TextEditingController issuesController = TextEditingController();
-  final TextEditingController notesController = TextEditingController();
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color accentBlue = Color(0xFF3B82F6);
+
+  final projectController = TextEditingController();
+  final engineerController = TextEditingController();
+  final labourController = TextEditingController();
+  final workController = TextEditingController();
+  final issuesController = TextEditingController();
+  final notesController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
   String selectedWeather = "Sunny";
@@ -29,7 +33,6 @@ class _SiteDiaryScreenState extends State<SiteDiaryScreen> {
 
   final weatherOptions = ["Sunny", "Cloudy", "Rainy", "Storm"];
 
-  /// DATE PICKER
   Future<void> pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -37,82 +40,62 @@ class _SiteDiaryScreenState extends State<SiteDiaryScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
-
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
+    if (picked != null) setState(() => selectedDate = picked);
   }
 
-  /// CAMERA
   Future<void> capturePhoto() async {
-    final picker = ImagePicker();
-    final photo = await picker.pickImage(source: ImageSource.camera);
-
-    if (photo != null) {
-      setState(() {
-        imageFile = File(photo.path);
-      });
-    }
+    final photo = await ImagePicker().pickImage(source: ImageSource.camera);
+    if (photo != null) setState(() => imageFile = File(photo.path));
   }
 
-  /// GPS LOCATION
   Future<void> getLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-
-    if (!serviceEnabled) {
+    if (!await Geolocator.isLocationServiceEnabled()) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Enable GPS")));
       return;
     }
 
-    LocationPermission permission = await Geolocator.requestPermission();
-
-    if (permission == LocationPermission.denied) return;
-
-    Position position = await Geolocator.getCurrentPosition();
+    await Geolocator.requestPermission();
+    final pos = await Geolocator.getCurrentPosition();
 
     setState(() {
       location =
-          "Lat: ${position.latitude.toStringAsFixed(5)}, Lng: ${position.longitude.toStringAsFixed(5)}";
+          "Lat: ${pos.latitude.toStringAsFixed(5)}, Lng: ${pos.longitude.toStringAsFixed(5)}";
     });
   }
 
-  /// SAVE ENTRY (READY FOR FIREBASE)
   void saveEntry() {
-    final diaryEntry = {
-      "date": DateFormat("yyyy-MM-dd").format(selectedDate),
-      "project": projectController.text,
-      "engineer": engineerController.text,
-      "weather": selectedWeather,
-      "workers": labourController.text,
-      "work_done": workController.text,
-      "issues": issuesController.text,
-      "notes": notesController.text,
-      "location": location,
-      "photo": imageFile?.path,
-    };
-
-    debugPrint("Diary Entry Data: $diaryEntry");
-
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Entry saved locally (Firebase ready)")),
+      const SnackBar(content: Text("Entry saved (Firebase ready)")),
     );
   }
 
-  Widget inputField(
-    String label,
-    TextEditingController controller, {
-    int lines = 1,
-  }) {
+  Widget field(String label, TextEditingController c, {int lines = 1}) {
     return TextField(
-      controller: controller,
+      controller: c,
       maxLines: lines,
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  Widget btn(String text, VoidCallback onTap) {
+    return SizedBox(
+      height: 42,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: accentBlue,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(text),
       ),
     );
   }
@@ -121,120 +104,179 @@ class _SiteDiaryScreenState extends State<SiteDiaryScreen> {
   Widget build(BuildContext context) {
     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("Site Diary")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            /// DATE
-            Row(
-              children: [
-                Expanded(child: Text("Date: $formattedDate")),
-                ElevatedButton(
-                  onPressed: pickDate,
-                  child: const Text("Select Date"),
-                ),
-              ],
-            ),
+    return AppScaffold(
+      title: "Site Diary",
+      showBack: true,
+      child: Container(
+        /// 🔥 GRADIENT BACKGROUND
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primaryBlue, accentBlue],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
 
-            const SizedBox(height: 20),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
 
-            /// PROJECT
-            inputField("Project Name", projectController),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
 
-            const SizedBox(height: 20),
+              child: Column(
+                children: [
+                  /// HEADER
+                  const Text(
+                    "SITE DIARY",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
 
-            /// ENGINEER
-            inputField("Engineer / Supervisor", engineerController),
+                  const SizedBox(height: 20),
 
-            const SizedBox(height: 20),
+                  /// FORM
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
 
-            /// WEATHER
-            DropdownButtonFormField(
-              value: selectedWeather,
-              decoration: const InputDecoration(
-                labelText: "Weather",
-                border: OutlineInputBorder(),
+                        child: Column(
+                          children: [
+                            /// DATE
+                            Row(
+                              children: [
+                                Expanded(child: Text("Date: $formattedDate")),
+                                btn("Select Date", pickDate),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// PROJECT + ENGINEER
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: field("Project", projectController),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: field("Engineer", engineerController),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// WEATHER + WORKERS
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField(
+                                    value: selectedWeather,
+                                    items: weatherOptions
+                                        .map(
+                                          (e) => DropdownMenuItem(
+                                            value: e,
+                                            child: Text(e),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) =>
+                                        setState(() => selectedWeather = v!),
+                                    decoration: const InputDecoration(
+                                      labelText: "Weather",
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: field("Workers", labourController),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// WORK + ISSUES
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: field(
+                                    "Work Done",
+                                    workController,
+                                    lines: 4,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: field(
+                                    "Issues",
+                                    issuesController,
+                                    lines: 4,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            field("Notes", notesController, lines: 2),
+
+                            const SizedBox(height: 16),
+
+                            /// PHOTO
+                            Row(
+                              children: [
+                                btn("Capture Photo", capturePhoto),
+                                const SizedBox(width: 10),
+                                if (imageFile != null)
+                                  Image.file(imageFile!, height: 50),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// LOCATION
+                            Row(
+                              children: [
+                                btn("Capture Location", getLocation),
+                                const SizedBox(width: 10),
+                                Expanded(child: Text(location)),
+                              ],
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            /// ACTIONS
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: btn("View Entries", () {
+                                    Get.to(() => const SiteDiaryListScreen());
+                                  }),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(child: btn("Save Entry", saveEntry)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              items: weatherOptions
-                  .map((w) => DropdownMenuItem(value: w, child: Text(w)))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedWeather = value!;
-                });
-              },
             ),
-
-            const SizedBox(height: 20),
-
-            /// WORKERS
-            inputField("Number of Workers", labourController),
-
-            const SizedBox(height: 20),
-
-            /// WORK DONE
-            inputField("Work Done Today", workController, lines: 3),
-
-            const SizedBox(height: 20),
-
-            /// ISSUES
-            inputField("Issues / Delays", issuesController, lines: 3),
-
-            const SizedBox(height: 20),
-
-            /// NOTES
-            inputField("Additional Notes", notesController, lines: 3),
-
-            const SizedBox(height: 20),
-
-            /// PHOTO
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: capturePhoto,
-                  child: const Text("Capture Photo"),
-                ),
-                const SizedBox(width: 20),
-                if (imageFile != null)
-                  SizedBox(height: 60, child: Image.file(imageFile!)),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            /// LOCATION
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: getLocation,
-                  child: const Text("Capture Location"),
-                ),
-                const SizedBox(width: 20),
-                Expanded(child: Text(location)),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            ElevatedButton.icon(
-              onPressed: () {
-                Get.to(() => const SiteDiaryListScreen());
-              },
-              icon: const Icon(Icons.history),
-              label: const Text("View Saved Entries"),
-            ),
-
-            /// SAVE
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: saveEntry,
-                child: const Text("Save Site Diary Entry"),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

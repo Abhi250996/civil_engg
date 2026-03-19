@@ -1,159 +1,140 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../core/constants/route_constants.dart';
 import '../../../data/models/project_model.dart';
 
 class ProjectDetailScreen extends StatelessWidget {
   const ProjectDetailScreen({super.key});
 
-  // Theme Tokens
-  static const Color primaryBlue = Color(0xFF1E3A8A); // Deep Blue
-  static const Color accentBlue = Color(0xFF3B82F6); // Sky Blue
-  static const Color bgColor = Color(0xFFF8FAFC); // Soft White
-  static const Color borderColor = Color(0xFFE5E7EB); // Light Gray
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color accentBlue = Color(0xFF3B82F6);
 
   @override
   Widget build(BuildContext context) {
     final ProjectModel project = Get.arguments;
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width > 900;
 
     return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: primaryBlue,
-            size: 20,
-          ),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          project.name.toUpperCase(),
-          style: const TextStyle(
-            color: primaryBlue,
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-            letterSpacing: 2,
+      body: Container(
+        /// 🔥 GRADIENT
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primaryBlue, accentBlue],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
-      ),
-      body: SingleChildScrollView(
+
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 1200,
-            ), // Desktop par window fit rakhega
+            constraints: const BoxConstraints(maxWidth: 1200),
+
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
+
               child: Column(
                 children: [
-                  _buildProjectHeader(project),
-                  const SizedBox(height: 24),
-
-                  // Detail Grid
-                  GridView(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent:
-                          400, // Card width restrict for Desktop
-                      mainAxisExtent: 260, // Card height lock
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                    ),
+                  /// ================= HEADER =================
+                  Row(
                     children: [
-                      _infoCard(
-                        title: "Basic Info",
-                        icon: Icons.info_outline,
-                        children: [
-                          _infoRow("Category", project.projectCategory ?? "-"),
-                          _infoRow("Subtype", project.projectSubType ?? "-"),
-                          _infoRow("Location", project.location ?? "-"),
-                          _infoRow(
-                            "Budget",
-                            "₹ ${project.budget?.toString() ?? "-"}",
-                          ),
-                        ],
+                      IconButton(
+                        onPressed: Get.back,
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
                       ),
-                      _infoCard(
-                        title: "Site Details",
-                        icon: Icons.map_outlined,
-                        children: [
-                          _infoRow(
-                            "Site Area",
-                            "${project.siteArea ?? "-"} m²",
+                      Expanded(
+                        child: Text(
+                          project.name.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
                           ),
-                          _infoRow(
-                            "Dimensions",
-                            "${project.length}m x ${project.width}m",
-                          ),
-                          _infoRow(
-                            "Elevation",
-                            "${project.elevation ?? "-"} m",
-                          ),
-                          _infoRow(
-                            "Coordinates",
-                            "${project.latitude}, ${project.longitude}",
-                          ),
-                        ],
+                        ),
                       ),
-                      _infoCard(
-                        title: "Engineering",
-                        icon: Icons.architecture,
-                        children: [
-                          _infoRow("Soil Type", project.soilType ?? "-"),
-                          _infoRow("Foundation", project.foundationType ?? "-"),
-                          _infoRow("Structure", project.structureType ?? "-"),
-                          _infoRow("Material", project.materialGrade ?? "-"),
-                        ],
-                      ),
-                      _infoCard(
-                        title: "Management",
-                        icon: Icons.business_center_outlined,
-                        children: [
-                          _infoRow("Contractor", project.contractor ?? "-"),
-                          _infoRow("Consultant", project.consultant ?? "-"),
-                          _infoRow("Status", project.projectStatus ?? "Active"),
-                          _infoRow("Stage", project.projectStage ?? "Planning"),
-                        ],
-                      ),
-                      _infoCard(
-                        title: "Timeline",
-                        icon: Icons.calendar_today_outlined,
-                        children: [
-                          _infoRow(
-                            "Start Date",
-                            project.startDate?.toLocal().toString().split(
-                                  " ",
-                                )[0] ??
-                                "-",
-                          ),
-                          _infoRow(
-                            "Target Date",
-                            project.completionDate?.toLocal().toString().split(
-                                  " ",
-                                )[0] ??
-                                "-",
-                          ),
-                          _infoRow(
-                            "Created",
-                            project.createdAt.toLocal().toString().split(
-                              " ",
-                            )[0],
-                          ),
-                        ],
-                      ),
-                      _actionCard(project),
                     ],
                   ),
 
-                  const SizedBox(height: 24),
-                  _buildNotesCard(project.description),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 20),
+
+                  /// ================= MAIN CARD =================
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _header(project),
+
+                            const SizedBox(height: 20),
+
+                            /// GRID
+                            GridView(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: isDesktop ? 350 : 500,
+                                    mainAxisExtent: 220,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                  ),
+                              children: [
+                                _card("Basic Info", [
+                                  _row(
+                                    "Category",
+                                    project.projectCategory ?? "-",
+                                  ),
+                                  _row("Location", project.location ?? "-"),
+                                  _row("Budget", "₹ ${project.budget ?? "-"}"),
+                                ]),
+
+                                _card("Engineering", [
+                                  _row("Soil", project.soilType ?? "-"),
+                                  _row(
+                                    "Foundation",
+                                    project.foundationType ?? "-",
+                                  ),
+                                  _row(
+                                    "Structure",
+                                    project.structureType ?? "-",
+                                  ),
+                                ]),
+
+                                _card("Timeline", [
+                                  _row(
+                                    "Start",
+                                    project.startDate?.toString().split(
+                                          " ",
+                                        )[0] ??
+                                        "-",
+                                  ),
+                                  _row(
+                                    "Target",
+                                    project.completionDate?.toString().split(
+                                          " ",
+                                        )[0] ??
+                                        "-",
+                                  ),
+                                ]),
+
+                                _actionCard(project),
+                              ],
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            _notes(project.description),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -163,51 +144,29 @@ class ProjectDetailScreen extends StatelessWidget {
     );
   }
 
-  // --- UI COMPONENTS ---
-
-  Widget _buildProjectHeader(ProjectModel project) {
+  /// ================= HEADER =================
+  Widget _header(ProjectModel p) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: primaryBlue,
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [primaryBlue, Color(0xFF162D6D)],
-        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: accentBlue,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              project.projectStatus?.toUpperCase() ?? "IN PROGRESS",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
           Text(
-            project.name,
+            p.projectStatus ?? "ACTIVE",
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            p.name,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            "ID: PRJ-${project.name.hashCode.toString().substring(0, 5)}",
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 12,
             ),
           ),
         ],
@@ -215,165 +174,90 @@ class ProjectDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _infoCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
+  /// ================= CARD =================
+  Widget _card(String title, List<Widget> children) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: accentBlue, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: primaryBlue,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: 24),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
           ...children,
         ],
       ),
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _row(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: primaryBlue.withOpacity(0.5),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 12)),
           Text(
             value,
-            style: const TextStyle(
-              color: primaryBlue,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNotesCard(String notes) {
+  /// ================= NOTES =================
+  Widget _notes(String text) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "ENGINEER NOTES",
-            style: TextStyle(
-              color: primaryBlue,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            notes.isEmpty ? "No notes added for this project." : notes,
-            style: TextStyle(
-              color: primaryBlue.withOpacity(0.7),
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-        ],
+      child: Text(
+        text.isEmpty ? "No notes available" : text,
+        style: const TextStyle(height: 1.4),
       ),
     );
   }
 
+  /// ================= ACTION =================
   Widget _actionCard(ProjectModel project) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: primaryBlue.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentBlue.withOpacity(0.2)),
+        color: primaryBlue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "PROJECT TOOLS",
-            style: TextStyle(
-              color: primaryBlue,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const Divider(height: 24),
-          _toolBtn(
-            "Calculations",
-            Icons.calculate_outlined,
-            () =>
-                Get.toNamed(RouteConstants.calculationType, arguments: project),
-          ),
-          const SizedBox(height: 12),
-          _toolBtn(
-            "Field Tools",
-            Icons.construction,
-            () => Get.toNamed(RouteConstants.fieldTools, arguments: project),
-          ),
-          const SizedBox(height: 12),
-          _toolBtn(
-            "Export Report",
-            Icons.description_outlined,
-            () => Get.toNamed(RouteConstants.reports, arguments: project),
-          ),
+          _btn("Calculations", () {
+            Get.toNamed(RouteConstants.calculationType, arguments: project);
+          }),
+          const SizedBox(height: 10),
+          _btn("Field Tools", () {
+            Get.toNamed(RouteConstants.fieldTools, arguments: project);
+          }),
+          const SizedBox(height: 10),
+          _btn("Reports", () {
+            Get.toNamed(RouteConstants.reports, arguments: project);
+          }),
         ],
       ),
     );
   }
 
-  Widget _toolBtn(String label, IconData icon, VoidCallback onTap) {
+  Widget _btn(String text, VoidCallback onTap) {
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton.icon(
-        icon: Icon(icon, size: 18),
-        label: Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
+      child: ElevatedButton(
         onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: primaryBlue,
-          side: const BorderSide(color: borderColor),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+        style: ElevatedButton.styleFrom(backgroundColor: accentBlue),
+        child: Text(text),
       ),
     );
   }

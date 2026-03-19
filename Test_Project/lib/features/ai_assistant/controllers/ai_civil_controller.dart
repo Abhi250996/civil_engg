@@ -1,52 +1,129 @@
+import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 
 class AiCivilController extends GetxController {
-  final RxList<Map<String, String>> messages = <Map<String, String>>[].obs;
+  /// CHAT MESSAGE STORAGE
+  final RxList<Map<String, dynamic>> messages = <Map<String, dynamic>>[].obs;
 
+  /// LOADING STATE
   final RxBool isLoading = false.obs;
 
-  /// Send message to AI
+  /// API ENDPOINTS
+  /// Android emulator -> http://10.0.2.2:3000
+  /// Web/Desktop -> http://localhost:3000
+  final String baseUrl = "http://localhost:3000";
+
+  late final String chatApi;
+  late final String imageApi;
+
+  @override
+  void onInit() {
+    super.onInit();
+
+    chatApi = "$baseUrl/ai-chat";
+    imageApi = "$baseUrl/generate-drawing";
+
+    /// Initial AI welcome message
+    messages.add({
+      "role": "ai",
+      "type": "text",
+      "message":
+          "👷 Civil Engineering AI Assistant Ready.\n\nAsk about:\n• Concrete\n• Steel\n• Footing\n• Draw engineering diagrams",
+      "time": DateTime.now().toString(),
+    });
+  }
+
+  /// MAIN MESSAGE FUNCTION
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    messages.add({"role": "user", "message": text});
+    /// ADD USER MESSAGE
+    messages.add({
+      "role": "user",
+      "type": "text",
+      "message": text,
+      "time": DateTime.now().toString(),
+    });
 
     isLoading.value = true;
 
     try {
-      /// Simulated AI response
-      await Future.delayed(const Duration(seconds: 2));
+      /// DETECT IMAGE REQUEST
+      bool wantsImage =
+          text.toLowerCase().contains("draw") ||
+          text.toLowerCase().contains("diagram") ||
+          text.toLowerCase().contains("plan") ||
+          text.toLowerCase().contains("layout");
 
-      String response = generateCivilResponse(text);
-
-      messages.add({"role": "ai", "message": response});
+      if (wantsImage) {
+        await generateImage(text);
+      } else {
+        await generateChat(text);
+      }
     } catch (e) {
-      messages.add({"role": "ai", "message": "Error generating response"});
+      messages.add({
+        "role": "ai",
+        "type": "text",
+        "message": "⚠ AI server connection error.",
+        "time": DateTime.now().toString(),
+      });
     }
 
     isLoading.value = false;
   }
 
-  /// Example AI logic (replace with OpenAI later)
-  String generateCivilResponse(String text) {
-    text = text.toLowerCase();
+  /// CHAT RESPONSE
+  Future<void> generateChat(String text) async {
+    final response = await http.post(
+      Uri.parse(chatApi),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"message": text}),
+    );
 
-    if (text.contains("concrete")) {
-      return "Concrete mix ratio commonly used is 1:2:4 for general RCC.";
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      messages.add({
+        "role": "ai",
+        "type": "text",
+        "message": data["reply"] ?? "No response",
+        "time": DateTime.now().toString(),
+      });
+    } else {
+      messages.add({
+        "role": "ai",
+        "type": "text",
+        "message": "AI failed to respond.",
+        "time": DateTime.now().toString(),
+      });
     }
+  }
 
-    if (text.contains("steel")) {
-      return "Steel weight formula: D² / 162 × Length.";
+  /// IMAGE GENERATION
+  Future<void> generateImage(String prompt) async {
+    final response = await http.post(
+      Uri.parse(imageApi),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"prompt": prompt}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      messages.add({
+        "role": "ai",
+        "type": "image",
+        "image": data["image"],
+        "time": DateTime.now().toString(),
+      });
+    } else {
+      messages.add({
+        "role": "ai",
+        "type": "text",
+        "message": "Image generation failed.",
+        "time": DateTime.now().toString(),
+      });
     }
-
-    if (text.contains("footing")) {
-      return "Footing size depends on soil bearing capacity and structural load.";
-    }
-
-    if (text.contains("brick")) {
-      return "Standard bricks required per cubic meter of masonry ≈ 500 bricks.";
-    }
-
-    return "Civil engineering AI assistant ready. Ask about construction, materials, or structural design.";
   }
 }

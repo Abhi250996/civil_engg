@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:test_project/core/constants/prompt_builder.dart';
 
 import '../../../core/constants/route_constants.dart';
 import '../../../data/models/project_model.dart';
@@ -17,7 +21,13 @@ class CalculationController extends GetxController {
 
   final RxDouble buildableArea = 0.0.obs;
 
-  /// STRUCTURE TYPES GRID
+  /// MATERIAL ESTIMATION
+  final RxDouble estimatedConcrete = 0.0.obs;
+  final RxDouble estimatedSteel = 0.0.obs;
+
+  /// ================================
+  /// STRUCTURE TYPES
+  /// ================================
   final List<Map<String, dynamic>> structureTypes = [
     {"title": "Building / House", "icon": Icons.home_work, "type": "building"},
     {"title": "Industrial Plant", "icon": Icons.factory, "type": "plant"},
@@ -28,6 +38,11 @@ class CalculationController extends GetxController {
     },
     {"title": "Road Layout", "icon": Icons.alt_route, "type": "road"},
     {"title": "Chimney", "icon": Icons.vertical_align_top, "type": "chimney"},
+    {
+      "title": "Thermal Chimney",
+      "icon": Icons.local_fire_department,
+      "type": "thermal_chimney",
+    },
     {"title": "Foundation", "icon": Icons.foundation, "type": "foundation"},
     {"title": "Water Tank", "icon": Icons.water, "type": "tank"},
     {"title": "Bridge / Overpass", "icon": Icons.edit_road, "type": "bridge"},
@@ -58,182 +73,222 @@ class CalculationController extends GetxController {
     {"title": "Custom Structure", "icon": Icons.architecture, "type": "custom"},
   ];
 
+  /// ================================
   /// OPEN INPUT SCREEN
+  /// ================================
   void openStructure(ProjectModel? project, String type) {
-    Get.toNamed(
-      RouteConstants.houseInput,
-      arguments: {"project": project, "type": type},
-    );
+    Get.toNamed(_getRoute(type), arguments: {"project": project, "type": type});
   }
 
-  /// ======================================================
-  /// MAIN DRAWING GENERATOR
-  /// ======================================================
-  Future<void> generateDrawingFromInputs({
+  String _getRoute(String type) {
+    switch (type) {
+      case "building":
+        return RouteConstants.buildingInput;
+      case "road":
+        return RouteConstants.roadInput;
+      case "bridge":
+        return RouteConstants.bridgeInput;
+      case "tank":
+        return RouteConstants.tankInput;
+      case "pipeline":
+        return RouteConstants.pipelineInput;
+      case "chimney":
+        return RouteConstants.chimneyInput;
+      case "thermal_chimney":
+        return RouteConstants.thermalChimneyInput;
+      case "foundation":
+        return RouteConstants.foundationInput;
+      case "tunnel":
+        return RouteConstants.tunnelInput;
+      case "retaining_wall":
+        return RouteConstants.retainingWallInput;
+      case "dam":
+        return RouteConstants.damInput;
+      case "tower":
+        return RouteConstants.towerInput;
+      case "solar":
+        return RouteConstants.solarFarmInput;
+      case "cooling_tower":
+        return RouteConstants.coolingTowerInput;
+      case "telecom":
+        return RouteConstants.telecomTowerInput;
+      case "warehouse":
+        return RouteConstants.warehouseInput;
+      case "silo":
+        return RouteConstants.siloInput;
+      case "parking":
+        return RouteConstants.parkingInput;
+      case "fence":
+        return RouteConstants.fenceInput;
+      case "plant":
+        return RouteConstants.plantInput;
+      case "factory":
+        return RouteConstants.factoryInput;
+      default:
+        return RouteConstants.buildingInput;
+    }
+  }
+
+  /// ================================
+  /// MAIN FUNCTION (UPDATED)
+  /// ================================
+  Future<Map<String, dynamic>> generateDrawingFromInputs({
     required String type,
     required Map<String, dynamic> inputData,
   }) async {
     try {
       isLoading.value = true;
-      statusMessage.value = "Preparing engineering parameters...";
+      statusMessage.value = "Analyzing inputs...";
 
-      /// EXTRACT STRUCTURED DATA
-
-      final project = inputData["project"] ?? {};
-      final site = inputData["site"] ?? {};
-      final regulations = inputData["regulations"] ?? {};
-      final building = inputData["building"] ?? {};
-      final structure = inputData["structure"] ?? {};
-      final drawing = inputData["drawing"] ?? {};
-
-      double length = double.tryParse(site["length"]?.toString() ?? "0") ?? 0;
-      double width = double.tryParse(site["width"]?.toString() ?? "0") ?? 0;
-
-      double frontSetback =
-          double.tryParse(regulations["frontSetback"]?.toString() ?? "0") ?? 0;
-
-      double sideSetback =
-          double.tryParse(regulations["sideSetback"]?.toString() ?? "0") ?? 0;
-
-      /// BUILDABLE AREA CALCULATION
-
-      if (length > 0 && width > 0) {
-        buildableArea.value =
-            (width - (2 * sideSetback)) * (length - frontSetback);
+      /// ================= SAFE PARSER =================
+      double parse(dynamic v) {
+        if (v == null) return 0;
+        return double.tryParse(v.toString()) ?? 0;
       }
 
-      String aiPrompt = "";
+      double length = 0, width = 0;
 
-      /// ======================================================
-      /// BUILDING PROMPT
-      /// ======================================================
+      /// ================= DIMENSION EXTRACTION =================
+      switch (type) {
+        case "building":
+          length = parse(
+            inputData["plotLength"] ?? inputData["geometry"]?["length"],
+          );
+          width = parse(
+            inputData["plotWidth"] ?? inputData["geometry"]?["width"],
+          );
+          break;
 
-      if (type == "building") {
-        aiPrompt =
-            """
-Task: Professional Architectural Floor Plan
+        case "road":
+          length = parse(inputData["geometry"]?["length"]);
+          width = parse(inputData["geometry"]?["width"]);
+          break;
 
-Project: ${project["name"]}
-Location: ${project["location"]}
+        case "bridge":
+          length = parse(inputData["geometry"]?["spanLength"]);
+          width = parse(inputData["geometry"]?["width"]);
+          break;
 
-Plot Dimensions: ${length}m x ${width}m
-Orientation: ${site["orientation"]}
+        case "tunnel":
+          length = parse(inputData["geometry"]?["length"]);
+          width = parse(inputData["geometry"]?["diameter"]);
+          break;
 
-Regulations:
-Front Setback: ${regulations["frontSetback"]} m
-Rear Setback: ${regulations["rearSetback"]} m
-Side Setback: ${regulations["sideSetback"]} m
+        case "tank":
+          width = parse(inputData["tank"]?["diameter"]);
+          break;
 
-Building Program:
-Floors: ${building["floors"]}
-Rooms: ${building["rooms"]} BHK
-Floor Height: ${building["floorHeight"]} m
+        case "chimney":
+          width = parse(inputData["diameter"]);
+          break;
 
-Structural Inputs:
-Soil Bearing Capacity: ${structure["soilBearingCapacity"]} kN/m²
-Seismic Zone: ${structure["seismicZone"]}
+        case "thermal_chimney":
+          width = parse(inputData["geometry"]?["diameter"]);
+          break;
 
-Drawing Settings:
-Scale: ${drawing["scale"]}
-Sheet Size: ${drawing["sheetSize"]}
-Detail Level: ${drawing["detailLevel"]}
+        case "warehouse":
+          length = parse(inputData["dimensions"]?["length"]);
+          width = parse(inputData["dimensions"]?["width"]);
+          break;
 
-Output:
-Professional dimensioned blueprint style architectural floor plan
-with walls, rooms, circulation spaces, structural grid, and annotations.
-""";
-      }
-      /// ======================================================
-      /// ROAD PROMPT
-      /// ======================================================
-      else if (type == "road") {
-        aiPrompt =
-            """
-Task: Civil Engineering Road Layout Drawing
+        case "silo":
+          width = parse(inputData["geometry"]?["diameter"]);
+          break;
 
-Project: ${project["name"]}
-Location: ${project["location"]}
+        case "solar":
+        case "plant":
+        case "factory":
+        case "parking":
+          length = parse(inputData["site"]?["length"]);
+          width = parse(inputData["site"]?["width"]);
+          break;
 
-Road Length: ${site["length"]} km
-Carriageway Width: ${site["width"]} m
-Pavement Thickness: ${structure["thickness"] ?? "200"} mm
+        case "pipeline":
+          length = parse(inputData["pipeline"]?["length"]);
+          width = parse(inputData["pipeline"]?["diameter"]);
+          break;
 
-Design Conditions:
-Soil Bearing Capacity: ${structure["soilBearingCapacity"]}
+        case "tower":
+        case "telecom":
+          break;
 
-Output:
-Professional civil engineering road layout with cross-section,
-layered pavement structure, drainage, and dimensions.
-""";
-      }
-      /// ======================================================
-      /// INDUSTRIAL PROMPT
-      /// ======================================================
-      else if (type == "factory" || type == "plant") {
-        aiPrompt =
-            """
-Task: Industrial Building Layout
+        case "dam":
+          length = parse(inputData["geometry"]?["crestLength"]);
+          width = parse(inputData["geometry"]?["baseWidth"]);
+          break;
 
-Project: ${project["name"]}
-Location: ${project["location"]}
+        case "retaining_wall":
+          length = parse(inputData["geometry"]?["length"]);
+          break;
 
-Building Size: ${length}m x ${width}m
-Structural Load Capacity: ${structure["designLoad"]} tons/m²
+        case "foundation":
+          length = parse(inputData["foundation"]?["length"]);
+          width = parse(inputData["foundation"]?["width"]);
+          break;
 
-Output:
-Industrial factory layout with machinery zones,
-structural grid, ventilation spaces and loading areas.
-""";
-      }
-      /// ======================================================
-      /// DEFAULT PROMPT
-      /// ======================================================
-      else {
-        aiPrompt =
-            """
-Task: Civil Engineering Structure Layout
+        case "cooling_tower":
+          width = parse(inputData["diameter"]);
+          break;
 
-Structure Type: $type
-
-Site Size:
-Length: $length m
-Width: $width m
-
-Create a professional engineering layout drawing with
-clear structural geometry, annotations, and blueprint style.
-""";
+        case "fence":
+          length = parse(inputData["length"]);
+          break;
       }
 
-      statusMessage.value = "AI is generating the professional drawing...";
+      /// ================= CALCULATIONS =================
+      double area = length * width;
 
-      /// CALL AI SERVICE
+      buildableArea.value = area;
+      estimatedConcrete.value = area * 0.12;
+      estimatedSteel.value = estimatedConcrete.value * 80;
 
+      /// ================= PROMPT =================
+      final aiPrompt = PromptBuilder.build(type, inputData);
+
+      print("TYPE: $type");
+      print("INPUT: $inputData");
+      print("PROMPT: $aiPrompt");
+
+      statusMessage.value = "Generating drawing...";
+
+      /// ================= API CALL =================
       final response = await _aiRepository.generateDrawing(
         inputData: {"prompt": aiPrompt, "meta_data": inputData},
       );
 
       if (response["image"] != null) {
         imageUrl.value = response["image"];
-
-        statusMessage.value = "Drawing Generated Successfully";
+        statusMessage.value = "Drawing Generated";
 
         Get.toNamed(RouteConstants.drawingResult);
+
+        return {"success": true};
       } else {
-        throw "AI returned invalid drawing data";
+        throw "Invalid AI response";
       }
     } catch (e) {
-      statusMessage.value = "Error generating drawing";
+      statusMessage.value = "Error occurred";
+      print("ERROR: $e");
 
-      debugPrint("AI Drawing Error: $e");
+      return {"success": false, "message": e.toString()};
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// ======================================================
-  /// VIEWER CONTROLS
-  /// ======================================================
+  /// ================= IMAGE =================
+  Future<Uint8List> getImageBytes() async {
+    final url = imageUrl.value;
 
+    if (url.startsWith("data:image")) {
+      return base64Decode(url.split(',').last);
+    }
+
+    final response = await http.get(Uri.parse(url));
+    return response.bodyBytes;
+  }
+
+  /// ================= VIEW =================
   void updateZoom(double scale) {
     currentZoom.value = scale;
   }

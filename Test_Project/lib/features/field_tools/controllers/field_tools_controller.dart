@@ -101,6 +101,20 @@ class FieldToolsController extends GetxController {
   }
 
   /// ======================================================
+  /// NEW TOOLS
+  /// ======================================================
+
+  /// AREA CALCULATOR
+  void openAreaTool() {
+    Get.toNamed(RouteConstants.areaCalc);
+  }
+
+  /// SLOPE CALCULATOR
+  void openSlopeTool() {
+    Get.toNamed(RouteConstants.slopeCalc);
+  }
+
+  /// ======================================================
   /// GPS TOOL
   /// ======================================================
 

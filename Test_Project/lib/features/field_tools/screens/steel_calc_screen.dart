@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_project/core/utils/app_scaffold.dart';
 
 class SteelCalcScreen extends StatefulWidget {
   const SteelCalcScreen({super.key});
@@ -8,8 +9,11 @@ class SteelCalcScreen extends StatefulWidget {
 }
 
 class _SteelCalcScreenState extends State<SteelCalcScreen> {
-  final TextEditingController lengthController = TextEditingController();
-  final TextEditingController barsController = TextEditingController();
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color accentBlue = Color(0xFF3B82F6);
+
+  final lengthController = TextEditingController();
+  final barsController = TextEditingController();
 
   String selectedDiameter = "12";
   String selectedUnit = "Meter";
@@ -18,97 +22,89 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
   double totalWeight = 0;
   double lengthInMeters = 0;
 
-  final List<String> diameters = ["6", "8", "10", "12", "16", "20", "25", "32"];
+  final diameters = ["6", "8", "10", "12", "16", "20", "25", "32"];
+  final units = ["Meter", "Feet", "Inch", "Yard", "Centimeter"];
 
-  final List<String> units = ["Meter", "Feet", "Inch", "Yard", "Centimeter"];
+  double calculateWeightPerMeter(double d) => (d * d) / 162;
 
-  /// Weight per meter formula
-  double calculateWeightPerMeter(double diameter) {
-    return (diameter * diameter) / 162;
-  }
-
-  /// Convert length to meters
-  double convertToMeters(double length) {
+  double convertToMeters(double value) {
     switch (selectedUnit) {
       case "Feet":
-        return length * 0.3048;
-
+        return value * 0.3048;
       case "Inch":
-        return length * 0.0254;
-
+        return value * 0.0254;
       case "Yard":
-        return length * 0.9144;
-
+        return value * 0.9144;
       case "Centimeter":
-        return length / 100;
-
+        return value / 100;
       default:
-        return length;
+        return value;
     }
   }
 
   void calculate() {
-    final lengthInput = double.tryParse(lengthController.text) ?? 0;
+    final len = convertToMeters(double.tryParse(lengthController.text) ?? 0);
     final bars = int.tryParse(barsController.text) ?? 0;
     final dia = double.parse(selectedDiameter);
 
-    final lengthMeters = convertToMeters(lengthInput);
     final wpm = calculateWeightPerMeter(dia);
 
     setState(() {
-      lengthInMeters = lengthMeters;
+      lengthInMeters = len;
       weightPerMeter = wpm;
-      totalWeight = wpm * lengthMeters * bars;
+      totalWeight = wpm * len * bars;
     });
   }
 
-  Widget inputField(
-    String label,
-    TextEditingController controller,
-    String hint,
-  ) {
+  /// ================= UI =================
+
+  Widget field(String label, TextEditingController c) {
     return TextField(
-      controller: controller,
+      controller: c,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
         labelText: label,
-        hintText: hint,
-        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
   Widget resultCard(String title, String value) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Colors.blue.shade50,
-          border: Border.all(color: Colors.blue.shade200),
-        ),
-        child: Column(
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text(value, style: const TextStyle(fontSize: 18)),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: primaryBlue,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget steelReferenceTable() {
+  Widget referenceCard() {
     final data = {
-      "6 mm": "0.222 kg/m",
-      "8 mm": "0.395 kg/m",
-      "10 mm": "0.617 kg/m",
-      "12 mm": "0.888 kg/m",
-      "16 mm": "1.58 kg/m",
-      "20 mm": "2.47 kg/m",
-      "25 mm": "3.85 kg/m",
-      "32 mm": "6.31 kg/m",
+      "6 mm": "0.222",
+      "8 mm": "0.395",
+      "10 mm": "0.617",
+      "12 mm": "0.888",
+      "16 mm": "1.58",
+      "20 mm": "2.47",
+      "25 mm": "3.85",
+      "32 mm": "6.31",
     };
 
     return Container(
@@ -121,22 +117,17 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Steel Weight Reference",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            "Steel Reference",
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-          ...data.entries.map(
-            (e) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text("${e.key}  →  ${e.value}"),
-            ),
-          ),
+          ...data.entries.map((e) => Text("${e.key} → ${e.value} kg/m")),
         ],
       ),
     );
   }
 
-  Widget bbsPreview() {
+  Widget bbsCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -146,15 +137,12 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Bar Bending Schedule Guide",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          SizedBox(height: 10),
-          Text("• Use correct bend allowance."),
-          Text("• Check lap length for splicing."),
-          Text("• Verify concrete cover."),
-          Text("• Follow structural drawing details."),
+          Text("BBS Guide", style: TextStyle(fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text("• Bend allowance"),
+          Text("• Lap length"),
+          Text("• Check cover"),
+          Text("• Follow drawing"),
         ],
       ),
     );
@@ -162,103 +150,182 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Steel Weight Calculator")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            /// DIAMETER
-            DropdownButtonFormField<String>(
-              value: selectedDiameter,
-              decoration: const InputDecoration(
-                labelText: "Bar Diameter (mm)",
-                border: OutlineInputBorder(),
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width > 900;
+
+    return AppScaffold(
+      title: "Steel Calculator",
+      showBack: true,
+      child: Container(
+        /// 🔥 GRADIENT BACKGROUND
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primaryBlue, accentBlue],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
+
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+
+              child: Column(
+                children: [
+                  /// HEADER
+                  const Text(
+                    "STEEL CALCULATOR",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+
+                        child: Column(
+                          children: [
+                            /// INPUT
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField(
+                                    value: selectedDiameter,
+                                    items: diameters
+                                        .map(
+                                          (d) => DropdownMenuItem(
+                                            value: d,
+                                            child: Text("$d mm"),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) =>
+                                        setState(() => selectedDiameter = v!),
+                                    decoration: const InputDecoration(
+                                      labelText: "Diameter",
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: DropdownButtonFormField(
+                                    value: selectedUnit,
+                                    items: units
+                                        .map(
+                                          (u) => DropdownMenuItem(
+                                            value: u,
+                                            child: Text(u),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) =>
+                                        setState(() => selectedUnit = v!),
+                                    decoration: const InputDecoration(
+                                      labelText: "Unit",
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: field("Bar Length", lengthController),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(child: field("Bars", barsController)),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            SizedBox(
+                              width: 200,
+                              child: ElevatedButton(
+                                onPressed: calculate,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: accentBlue,
+                                ),
+                                child: const Text("CALCULATE"),
+                              ),
+                            ),
+
+                            const SizedBox(height: 25),
+
+                            /// RESULTS
+                            GridView.count(
+                              crossAxisCount: 2,
+                              shrinkWrap: true,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 2.5,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
+                                resultCard(
+                                  "Weight/m",
+                                  "${weightPerMeter.toStringAsFixed(3)} kg",
+                                ),
+                                resultCard(
+                                  "Total",
+                                  "${totalWeight.toStringAsFixed(2)} kg",
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            Text(
+                              "Length: ${lengthInMeters.toStringAsFixed(3)} m",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            /// BOTTOM SECTION
+                            isDesktop
+                                ? Row(
+                                    children: [
+                                      Expanded(child: referenceCard()),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: bbsCard()),
+                                    ],
+                                  )
+                                : Column(
+                                    children: [
+                                      referenceCard(),
+                                      const SizedBox(height: 12),
+                                      bbsCard(),
+                                    ],
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              items: diameters
-                  .map((d) => DropdownMenuItem(value: d, child: Text("$d mm")))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedDiameter = value!;
-                });
-              },
             ),
-
-            const SizedBox(height: 20),
-
-            /// UNIT
-            DropdownButtonFormField<String>(
-              value: selectedUnit,
-              decoration: const InputDecoration(
-                labelText: "Length Unit",
-                border: OutlineInputBorder(),
-              ),
-              items: units
-                  .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedUnit = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            /// LENGTH
-            inputField("Bar Length", lengthController, "Example: 12"),
-
-            const SizedBox(height: 20),
-
-            /// NUMBER OF BARS
-            inputField("Number of Bars", barsController, "Example: 10"),
-
-            const SizedBox(height: 25),
-
-            /// CALCULATE
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: calculate,
-                child: const Text("Calculate Steel Weight"),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            /// RESULTS
-            Row(
-              children: [
-                resultCard(
-                  "Weight / Meter",
-                  "${weightPerMeter.toStringAsFixed(3)} kg/m",
-                ),
-                resultCard(
-                  "Total Weight",
-                  "${totalWeight.toStringAsFixed(2)} kg",
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 15),
-
-            /// Converted length display
-            Text(
-              "Length in meters: ${lengthInMeters.toStringAsFixed(3)} m",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 30),
-
-            /// REFERENCE TABLE
-            steelReferenceTable(),
-
-            const SizedBox(height: 30),
-
-            /// BBS GUIDE
-            bbsPreview(),
-          ],
+          ),
         ),
       ),
     );
