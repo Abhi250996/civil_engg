@@ -10,19 +10,37 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-
-/* READ API KEY FROM ENV */
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
+
+/* ==============================
+   HEALTH CHECK (IMPORTANT 🔥)
+============================== */
+app.get("/", (req, res) => {
+  res.send("AI Server Running 🚀");
+});
+
+app.get("/test", (req, res) => {
+  res.json({ status: "OK", message: "API working fast ✅" });
+});
 
 /* ==============================
    AI DRAWING IMAGE GENERATION
 ============================== */
-
 app.post("/generate-drawing", async (req, res) => {
   try {
     const prompt = req.body.prompt;
 
-    console.log("Incoming prompt:", prompt);
+    if (!prompt) {
+      return res.status(400).json({ error: "Prompt is required" });
+    }
+
+    if (!OPENAI_KEY) {
+      return res.status(500).json({
+        error: "Missing OPENAI_API_KEY in environment",
+      });
+    }
+
+    console.log("Generating drawing for:", prompt);
 
     const response = await axios.post(
       "https://api.openai.com/v1/images/generations",
@@ -43,49 +61,62 @@ top view layout
 `,
 
         size: "1024x1024",
-        response_format: "b64_json",
       },
-
       {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_KEY}`,
         },
-        timeout: 60000,
-      },
+        timeout: 30000, // 🔥 reduced timeout (important)
+      }
     );
 
-    const imageBase64 = response.data.data[0].b64_json;
+    // safer access
+    const imageUrl = response.data?.data?.[0]?.url;
 
-    const imageUrl = `data:image/png;base64,${imageBase64}`;
+    if (!imageUrl) {
+      return res.status(500).json({
+        error: "Image generation failed",
+      });
+    }
 
-    console.log("AI IMAGE GENERATED");
+    console.log("Image generated successfully ✅");
 
-    res.json({
-      image: imageUrl,
-    });
+    res.json({ image: imageUrl });
+
   } catch (error) {
-    console.log("SERVER ERROR:");
+    console.log("DRAWING ERROR:");
 
     if (error.response) {
       console.log(error.response.data);
-      res.status(500).json(error.response.data);
-    } else {
-      console.log(error.message);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json(error.response.data);
     }
+
+    console.log(error.message);
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
 /* ==============================
    AI CIVIL CHATBOT
 ============================== */
-
 app.post("/ai-chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
 
-    console.log("AI Chat Request:", userMessage);
+    if (!userMessage) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    if (!OPENAI_KEY) {
+      return res.status(500).json({
+        error: "Missing OPENAI_API_KEY",
+      });
+    }
+
+    console.log("AI Chat:", userMessage);
 
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
@@ -110,7 +141,6 @@ Help with:
 Explain answers clearly like an experienced site engineer.
 `,
           },
-
           {
             role: "user",
             content: userMessage,
@@ -119,39 +149,43 @@ Explain answers clearly like an experienced site engineer.
 
         temperature: 0.3,
       },
-
       {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_KEY}`,
         },
+        timeout: 20000, // 🔥 prevent long hang
       }
     );
 
-    const aiReply = response.data.choices[0].message.content;
+    const aiReply = response.data?.choices?.[0]?.message?.content;
 
-    res.json({
-      reply: aiReply,
-    });
+    if (!aiReply) {
+      return res.status(500).json({
+        error: "No response from AI",
+      });
+    }
+
+    res.json({ reply: aiReply });
 
   } catch (error) {
-
-    console.log("AI CHAT ERROR");
+    console.log("CHAT ERROR:");
 
     if (error.response) {
       console.log(error.response.data);
-      res.status(500).json(error.response.data);
-    } else {
-      console.log(error.message);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json(error.response.data);
     }
+
+    console.log(error.message);
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
 /* ==============================
    SERVER START
 ============================== */
-
 app.listen(PORT, () => {
-  console.log(`AI Server running on http://localhost:${PORT}`);
+  console.log(`AI Server running on port ${PORT}`);
 });
