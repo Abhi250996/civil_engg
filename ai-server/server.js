@@ -10,93 +10,81 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
+
+/* READ API KEY FROM ENV */
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 /* ==============================
-   HEALTH CHECK
+   AI DRAWING IMAGE GENERATION
 ============================== */
-app.get("/", (req, res) => {
-  res.send("AI Server Running 🚀");
-});
 
-app.get("/test", (req, res) => {
-  res.json({ status: "OK", message: "API working fast ✅" });
-});
-
-/* ==============================
-   AI DRAWING IMAGE GENERATION (OPTIMIZED)
-============================== */
 app.post("/generate-drawing", async (req, res) => {
   try {
     const prompt = req.body.prompt;
 
-    if (!prompt) {
-      return res.status(400).json({ error: "Prompt is required" });
-    }
-
-    if (!OPENAI_KEY) {
-      return res.status(500).json({
-        error: "Missing OPENAI_API_KEY",
-      });
-    }
-
-    console.log("Generating drawing:", prompt);
+    console.log("Incoming prompt:", prompt);
 
     const response = await axios.post(
       "https://api.openai.com/v1/images/generations",
       {
         model: "gpt-image-1",
 
-        // 🔥 SHORT + FAST PROMPT
-        prompt: `civil engineering blueprint drawing: ${prompt}`,
+        prompt: `
+Create a clean civil engineering drawing diagram.
 
-        size: "512x512", // 🔥 reduced size (VERY IMPORTANT)
+${prompt}
+
+Style:
+black technical drawing
+engineering blueprint
+white background
+clean vector diagram
+top view layout
+`,
+
+        size: "1024x1024",
       },
+
       {
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_KEY}`,
         },
-        timeout: 20000, // 🔥 avoid railway timeout
-      }
+        timeout: 60000,
+      },
     );
 
-    const imageUrl = response.data?.data?.[0]?.url;
+    const imageBase64 = response.data.data[0].b64_json;
 
-    if (!imageUrl) {
-      throw new Error("No image returned");
-    }
+    const imageUrl = `data:image/png;base64,${imageBase64}`;
 
-    console.log("Image generated ✅");
+    console.log("AI IMAGE GENERATED");
 
-    return res.json({ image: imageUrl });
-
-  } catch (error) {
-    console.log("DRAW ERROR:", error.message);
-
-    return res.status(500).json({
-      error: error.response?.data || error.message,
+    res.json({
+      image: imageUrl,
     });
+  } catch (error) {
+    console.log("SERVER ERROR:");
+
+    if (error.response) {
+      console.log(error.response.data);
+      res.status(500).json(error.response.data);
+    } else {
+      console.log(error.message);
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
 /* ==============================
    AI CIVIL CHATBOT
 ============================== */
+
 app.post("/ai-chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
 
-    if (!userMessage) {
-      return res.status(400).json({ error: "Message is required" });
-    }
-
-    if (!OPENAI_KEY) {
-      return res.status(500).json({
-        error: "Missing OPENAI_API_KEY",
-      });
-    }
-
-    console.log("AI Chat:", userMessage);
+    console.log("AI Chat Request:", userMessage);
 
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
@@ -106,9 +94,22 @@ app.post("/ai-chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are a professional civil engineering assistant. Give clear practical answers.",
+            content: `
+You are a professional civil engineering assistant.
+
+Help with:
+- Concrete calculations
+- Structural engineering
+- Construction methods
+- Steel reinforcement
+- Site problems
+- Engineering formulas
+- Civil engineering standards
+
+Explain answers clearly like an experienced site engineer.
+`,
           },
+
           {
             role: "user",
             content: userMessage,
@@ -117,34 +118,39 @@ app.post("/ai-chat", async (req, res) => {
 
         temperature: 0.3,
       },
+
       {
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_KEY}`,
         },
-        timeout: 15000,
       }
     );
 
-    const reply = response.data?.choices?.[0]?.message?.content;
+    const aiReply = response.data.choices[0].message.content;
 
-    if (!reply) {
-      throw new Error("No reply from AI");
-    }
-
-    return res.json({ reply });
+    res.json({
+      reply: aiReply,
+    });
 
   } catch (error) {
-    console.log("CHAT ERROR:", error.message);
 
-    return res.status(500).json({
-      error: error.response?.data || error.message,
-    });
+    console.log("AI CHAT ERROR");
+
+    if (error.response) {
+      console.log(error.response.data);
+      res.status(500).json(error.response.data);
+    } else {
+      console.log(error.message);
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
 /* ==============================
    SERVER START
 ============================== */
+
 app.listen(PORT, () => {
-  console.log(`🚀 AI Server running on port ${PORT}`);
+  console.log(`AI Server running on http://localhost:${PORT}`);
 });
