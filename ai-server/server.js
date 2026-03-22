@@ -43,6 +43,7 @@ top view layout
 `,
 
         size: "1024x1024",
+        response_format: "b64_json",
       },
 
       {
