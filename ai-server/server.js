@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 /* ==============================
-   HEALTH CHECK (IMPORTANT 🔥)
+   HEALTH CHECK
 ============================== */
 app.get("/", (req, res) => {
   res.send("AI Server Running 🚀");
@@ -24,7 +24,7 @@ app.get("/test", (req, res) => {
 });
 
 /* ==============================
-   AI DRAWING IMAGE GENERATION
+   AI DRAWING IMAGE GENERATION (OPTIMIZED)
 ============================== */
 app.post("/generate-drawing", async (req, res) => {
   try {
@@ -36,65 +36,45 @@ app.post("/generate-drawing", async (req, res) => {
 
     if (!OPENAI_KEY) {
       return res.status(500).json({
-        error: "Missing OPENAI_API_KEY in environment",
+        error: "Missing OPENAI_API_KEY",
       });
     }
 
-    console.log("Generating drawing for:", prompt);
+    console.log("Generating drawing:", prompt);
 
     const response = await axios.post(
       "https://api.openai.com/v1/images/generations",
       {
         model: "gpt-image-1",
 
-        prompt: `
-Create a clean civil engineering drawing diagram.
+        // 🔥 SHORT + FAST PROMPT
+        prompt: `civil engineering blueprint drawing: ${prompt}`,
 
-${prompt}
-
-Style:
-black technical drawing
-engineering blueprint
-white background
-clean vector diagram
-top view layout
-`,
-
-        size: "1024x1024",
+        size: "512x512", // 🔥 reduced size (VERY IMPORTANT)
       },
       {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_KEY}`,
         },
-        timeout: 30000, // 🔥 reduced timeout (important)
+        timeout: 20000, // 🔥 avoid railway timeout
       }
     );
 
-    // safer access
     const imageUrl = response.data?.data?.[0]?.url;
 
     if (!imageUrl) {
-      return res.status(500).json({
-        error: "Image generation failed",
-      });
+      throw new Error("No image returned");
     }
 
-    console.log("Image generated successfully ✅");
+    console.log("Image generated ✅");
 
-    res.json({ image: imageUrl });
+    return res.json({ image: imageUrl });
 
   } catch (error) {
-    console.log("DRAWING ERROR:");
+    console.log("DRAW ERROR:", error.message);
 
-    if (error.response) {
-      console.log(error.response.data);
-      return res.status(500).json(error.response.data);
-    }
-
-    console.log(error.message);
-    res.status(500).json({
-      error: error.message,
+    return res.status(500).json({
+      error: error.response?.data || error.message,
     });
   }
 });
@@ -126,20 +106,8 @@ app.post("/ai-chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `
-You are a professional civil engineering assistant.
-
-Help with:
-- Concrete calculations
-- Structural engineering
-- Construction methods
-- Steel reinforcement
-- Site problems
-- Engineering formulas
-- Civil engineering standards
-
-Explain answers clearly like an experienced site engineer.
-`,
+            content:
+              "You are a professional civil engineering assistant. Give clear practical answers.",
           },
           {
             role: "user",
@@ -151,34 +119,25 @@ Explain answers clearly like an experienced site engineer.
       },
       {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_KEY}`,
         },
-        timeout: 20000, // 🔥 prevent long hang
+        timeout: 15000,
       }
     );
 
-    const aiReply = response.data?.choices?.[0]?.message?.content;
+    const reply = response.data?.choices?.[0]?.message?.content;
 
-    if (!aiReply) {
-      return res.status(500).json({
-        error: "No response from AI",
-      });
+    if (!reply) {
+      throw new Error("No reply from AI");
     }
 
-    res.json({ reply: aiReply });
+    return res.json({ reply });
 
   } catch (error) {
-    console.log("CHAT ERROR:");
+    console.log("CHAT ERROR:", error.message);
 
-    if (error.response) {
-      console.log(error.response.data);
-      return res.status(500).json(error.response.data);
-    }
-
-    console.log(error.message);
-    res.status(500).json({
-      error: error.message,
+    return res.status(500).json({
+      error: error.response?.data || error.message,
     });
   }
 });
@@ -187,5 +146,5 @@ Explain answers clearly like an experienced site engineer.
    SERVER START
 ============================== */
 app.listen(PORT, () => {
-  console.log(`AI Server running on port ${PORT}`);
+  console.log(`🚀 AI Server running on port ${PORT}`);
 });
