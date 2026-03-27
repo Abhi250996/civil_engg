@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 import '../../../core/utils/validators.dart';
 
 class MeasurementScreen extends StatefulWidget {
@@ -318,7 +318,12 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: accentBlue,
                                           ),
-                                          child: const Text("CALCULATE"),
+                                          child: const Text(
+                                            "CALCULATE",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 10),
@@ -328,7 +333,12 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.grey,
                                           ),
-                                          child: const Text("RESET"),
+                                          child: const Text(
+                                            "RESET",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],

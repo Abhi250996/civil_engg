@@ -16,10 +16,16 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
 
   bool isLoading = false;
 
-  /// 🎨 SAME COLORS
-  static const Color primaryBlue = Color(0xFF7b7eba);
-  static const Color accentBlue = Color(0xFFbdbcdc);
-  static const Color accentBlue2 = Color(0xFFdeddee);
+  /// 🎨 BRAND COLORS
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color secondaryBlue = Color(0xFF3B82F6);
+  static const Color bgColor = Color(0xFFF8FAFC);
+
+  /// UNIT OPTIONS
+  final List<String> lengthUnits = ["Meter", "Feet", "Inch"];
+  final List<String> flowUnits = ["m³/h", "gpm", "L/s"];
+  final List<String> tempUnits = ["°C", "°F", "K"];
+  final List<String> pressureUnits = ["kN/m²", "psf", "kPa"];
 
   /// CONTROLLERS
   final heightController = TextEditingController();
@@ -27,47 +33,35 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
   final throatDiameterController = TextEditingController();
   final topDiameterController = TextEditingController();
   final shellThicknessController = TextEditingController();
-
   final waterFlowController = TextEditingController();
   final inletTempController = TextEditingController();
   final outletTempController = TextEditingController();
   final airFlowController = TextEditingController();
-
   final fanDiameterController = TextEditingController();
   final fanCountController = TextEditingController();
   final fillHeightController = TextEditingController();
-
   final windLoadController = TextEditingController();
   final seismicZoneController = TextEditingController();
   final soilController = TextEditingController();
   final concreteGradeController = TextEditingController();
   final steelGradeController = TextEditingController();
 
-  String towerType = "Natural Draft";
+  /// UNIT STATES
+  String heightUnit = "Meter";
+  String baseDiaUnit = "Meter";
+  String throatDiaUnit = "Meter";
+  String topDiaUnit = "Meter";
+  String thickUnit = "Centimeter";
+  String flowUnit = "m³/h";
+  String tempInUnit = "°C";
+  String tempOutUnit = "°C";
+  String windUnit = "kN/m²";
+  String soilUnit = "kN/m²";
 
+  String towerType = "Natural Draft";
   String scale = "1:100";
   String sheetSize = "A1";
   String detailLevel = "Standard";
-
-  /// RESPONSIVE (NOT REMOVED)
-  int getCrossAxisCount(double width) {
-    if (width > 1200) return 5;
-    if (width > 800) return 3;
-    return 2;
-  }
-
-  Widget responsiveGrid(List<Widget> children) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return GridView.count(
-          crossAxisCount: getCrossAxisCount(constraints.maxWidth),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: children,
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,14 +75,12 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
         title: const Text("Cooling Tower Design"),
         elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        foregroundColor: primaryBlue,
       ),
-
-      /// GRADIENT
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [primaryBlue, accentBlue, accentBlue2],
+            colors: [primaryBlue, secondaryBlue, bgColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -115,14 +107,6 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.95),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -131,29 +115,80 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
             padding: const EdgeInsets.all(12),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text("Project: ${project?.name ?? "Unnamed"}"),
+              child: Text(
+                "Project: ${project?.name ?? "Unnamed"}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryBlue,
+                ),
+              ),
             ),
           ),
           _divider(),
-
           _row([
-            _cell("Height", heightController),
-            _cell("Base Dia", baseDiameterController),
-            _cell("Throat Dia", throatDiameterController),
-            _cell("Top Dia", topDiameterController),
+            _cellWithUnit(
+              "Height",
+              heightController,
+              heightUnit,
+              (v) => setState(() => heightUnit = v!),
+              lengthUnits,
+            ),
+            _cellWithUnit(
+              "Base Dia",
+              baseDiameterController,
+              baseDiaUnit,
+              (v) => setState(() => baseDiaUnit = v!),
+              lengthUnits,
+            ),
+            _cellWithUnit(
+              "Throat Dia",
+              throatDiameterController,
+              throatDiaUnit,
+              (v) => setState(() => throatDiaUnit = v!),
+              lengthUnits,
+            ),
+            _cellWithUnit(
+              "Top Dia",
+              topDiameterController,
+              topDiaUnit,
+              (v) => setState(() => topDiaUnit = v!),
+              lengthUnits,
+            ),
           ]),
           _divider(),
-
           _row([
-            _cell("Thickness", shellThicknessController),
-            _cell("Water Flow", waterFlowController),
-            _cell("Inlet Temp", inletTempController),
-            _cell("Outlet Temp", outletTempController),
+            _cellWithUnit(
+              "Thickness",
+              shellThicknessController,
+              thickUnit,
+              (v) => setState(() => thickUnit = v!),
+              ["Centimeter", "Inch", "mm"],
+            ),
+            _cellWithUnit(
+              "Water Flow",
+              waterFlowController,
+              flowUnit,
+              (v) => setState(() => flowUnit = v!),
+              flowUnits,
+            ),
+            _cellWithUnit(
+              "Inlet Temp",
+              inletTempController,
+              tempInUnit,
+              (v) => setState(() => tempInUnit = v!),
+              tempUnits,
+            ),
+            _cellWithUnit(
+              "Outlet Temp",
+              outletTempController,
+              tempOutUnit,
+              (v) => setState(() => tempOutUnit = v!),
+              tempUnits,
+            ),
           ]),
           _divider(),
-
           _row([
-            _cell("Air Flow", airFlowController),
+            _cell("Air Flow (m³/s)", airFlowController),
             _cellDrop("Tower Type", towerType, [
               "Natural Draft",
               "Mechanical Draft",
@@ -162,18 +197,28 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
             _cell("Fan Count", fanCountController),
           ]),
           _divider(),
-
           _row([
             _cell("Fill Height", fillHeightController),
             _cell("Concrete", concreteGradeController),
             _cell("Steel", steelGradeController),
-            _cell("Wind Load", windLoadController),
+            _cellWithUnit(
+              "Wind Load",
+              windLoadController,
+              windUnit,
+              (v) => setState(() => windUnit = v!),
+              pressureUnits,
+            ),
           ]),
           _divider(),
-
           _row([
-            _cell("Seismic", seismicZoneController),
-            _cell("Soil", soilController),
+            _cell("Seismic Zone", seismicZoneController),
+            _cellWithUnit(
+              "Soil Cap.",
+              soilController,
+              soilUnit,
+              (v) => setState(() => soilUnit = v!),
+              pressureUnits,
+            ),
             _cellDrop("Scale", scale, [
               "1:50",
               "1:100",
@@ -187,24 +232,18 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
             ], (v) => setState(() => sheetSize = v!)),
           ]),
           _divider(),
-
-          _row([
-            _cellDrop("Detail", detailLevel, [
-              "Concept",
-              "Standard",
-              "Construction",
-            ], (v) => setState(() => detailLevel = v!)),
-            const Expanded(child: SizedBox()),
-            const Expanded(child: SizedBox()),
-            const Expanded(child: SizedBox()),
-          ]),
-          _divider(),
-
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: _submitButton(),
+            child: Row(
+              children: [
+                _cellDrop("Detail Level", detailLevel, [
+                  "Concept",
+                  "Standard",
+                  "Construction",
+                ], (v) => setState(() => detailLevel = v!)),
+                const Spacer(flex: 3),
+                _submitButton(),
+              ],
             ),
           ),
         ],
@@ -223,41 +262,104 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(10),
-            child: Text("Project: ${project?.name ?? "Unnamed"}"),
+            child: Text(
+              "Project: ${project?.name ?? "Unnamed"}",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
-          _mobileField("Height", heightController),
-          _mobileField("Base Dia", baseDiameterController),
-          _mobileField("Throat Dia", throatDiameterController),
-          _mobileField("Top Dia", topDiameterController),
-          _mobileField("Thickness", shellThicknessController),
-          _mobileField("Water Flow", waterFlowController),
-          _mobileField("Inlet Temp", inletTempController),
-          _mobileField("Outlet Temp", outletTempController),
-          _mobileField("Air Flow", airFlowController),
+          _mobileWithUnit(
+            "Height",
+            heightController,
+            heightUnit,
+            (v) => setState(() => heightUnit = v!),
+            lengthUnits,
+          ),
+          _mobileWithUnit(
+            "Base Dia",
+            baseDiameterController,
+            baseDiaUnit,
+            (v) => setState(() => baseDiaUnit = v!),
+            lengthUnits,
+          ),
+          _mobileWithUnit(
+            "Throat Dia",
+            throatDiameterController,
+            throatDiaUnit,
+            (v) => setState(() => throatDiaUnit = v!),
+            lengthUnits,
+          ),
+          _mobileWithUnit(
+            "Top Dia",
+            topDiameterController,
+            topDiaUnit,
+            (v) => setState(() => topDiaUnit = v!),
+            lengthUnits,
+          ),
+          _mobileWithUnit(
+            "Thickness",
+            shellThicknessController,
+            thickUnit,
+            (v) => setState(() => thickUnit = v!),
+            ["Centimeter", "mm"],
+          ),
+          _mobileWithUnit(
+            "Water Flow",
+            waterFlowController,
+            flowUnit,
+            (v) => setState(() => flowUnit = v!),
+            flowUnits,
+          ),
+          _mobileWithUnit(
+            "Inlet Temp",
+            inletTempController,
+            tempInUnit,
+            (v) => setState(() => tempInUnit = v!),
+            tempUnits,
+          ),
+          _mobileWithUnit(
+            "Outlet Temp",
+            outletTempController,
+            tempOutUnit,
+            (v) => setState(() => tempOutUnit = v!),
+            tempUnits,
+          ),
+          _mobileField("Air Flow (m³/s)", airFlowController),
           _mobileDrop("Tower Type", towerType, [
             "Natural Draft",
             "Mechanical Draft",
           ], (v) => setState(() => towerType = v!)),
-          _mobileField("Fan Dia", fanDiameterController),
+          _mobileField("Fan Diameter", fanDiameterController),
           _mobileField("Fan Count", fanCountController),
           _mobileField("Fill Height", fillHeightController),
-          _mobileField("Concrete", concreteGradeController),
-          _mobileField("Steel", steelGradeController),
-          _mobileField("Wind Load", windLoadController),
-          _mobileField("Seismic", seismicZoneController),
-          _mobileField("Soil", soilController),
+          _mobileField("Concrete Grade", concreteGradeController),
+          _mobileField("Steel Grade", steelGradeController),
+          _mobileWithUnit(
+            "Wind Load",
+            windLoadController,
+            windUnit,
+            (v) => setState(() => windUnit = v!),
+            pressureUnits,
+          ),
+          _mobileField("Seismic Zone", seismicZoneController),
+          _mobileWithUnit(
+            "Soil Capacity",
+            soilController,
+            soilUnit,
+            (v) => setState(() => soilUnit = v!),
+            pressureUnits,
+          ),
           _mobileDrop("Scale", scale, [
             "1:50",
             "1:100",
             "1:200",
           ], (v) => setState(() => scale = v!)),
-          _mobileDrop("Sheet", sheetSize, [
+          _mobileDrop("Sheet Size", sheetSize, [
             "A0",
             "A1",
             "A2",
             "A3",
           ], (v) => setState(() => sheetSize = v!)),
-          _mobileDrop("Detail", detailLevel, [
+          _mobileDrop("Detail Level", detailLevel, [
             "Concept",
             "Standard",
             "Construction",
@@ -270,7 +372,79 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
     );
   }
 
-  /// COMMON
+  /// ================= REUSABLE HELPERS =================
+  Widget _unitPicker(
+    String currentVal,
+    List<String> options,
+    Function(String?) onChanged,
+  ) {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: currentVal,
+        icon: const Icon(Icons.arrow_drop_down, size: 14, color: secondaryBlue),
+        style: const TextStyle(
+          color: primaryBlue,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+        items: options
+            .map((val) => DropdownMenuItem(value: val, child: Text(val)))
+            .toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _cellWithUnit(
+    String label,
+    TextEditingController c,
+    String unit,
+    Function(String?) onUnitChanged,
+    List<String> opts,
+  ) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: TextFormField(
+          controller: c,
+          keyboardType: TextInputType.number,
+          validator: (v) => v!.isEmpty ? "Required" : null,
+          decoration: InputDecoration(
+            labelText: label,
+            suffixIcon: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: _unitPicker(unit, opts, onUnitChanged),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _mobileWithUnit(
+    String label,
+    TextEditingController c,
+    String unit,
+    Function(String?) onUnitChanged,
+    List<String> opts,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: TextFormField(
+        controller: c,
+        keyboardType: TextInputType.number,
+        validator: (v) => v!.isEmpty ? "Required" : null,
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _unitPicker(unit, opts, onUnitChanged),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _row(List<Widget> cells) =>
       IntrinsicHeight(child: Row(children: cells));
 
@@ -344,74 +518,11 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
     return SizedBox(
       height: 40,
       child: ElevatedButton(
-        onPressed: isLoading
-            ? null
-            : () async {
-                if (!formKey.currentState!.validate()) return;
-
-                setState(() => isLoading = true);
-
-                Map<String, dynamic> data = {
-                  "geometry": {
-                    "height": heightController.text,
-                    "baseDiameter": baseDiameterController.text,
-                    "throatDiameter": throatDiameterController.text,
-                    "topDiameter": topDiameterController.text,
-                    "shellThickness": shellThicknessController.text,
-                  },
-                  "thermal": {
-                    "waterFlow": waterFlowController.text,
-                    "inletTemp": inletTempController.text,
-                    "outletTemp": outletTempController.text,
-                    "airFlow": airFlowController.text,
-                  },
-                  "mechanical": {
-                    "towerType": towerType,
-                    "fanDiameter": fanDiameterController.text,
-                    "fanCount": fanCountController.text,
-                    "fillHeight": fillHeightController.text,
-                  },
-                  "structure": {
-                    "windLoad": windLoadController.text,
-                    "seismicZone": seismicZoneController.text,
-                    "soilBearingCapacity": soilController.text,
-                    "concreteGrade": concreteGradeController.text,
-                    "steelGrade": steelGradeController.text,
-                  },
-                  "drawing": {
-                    "scale": scale,
-                    "sheetSize": sheetSize,
-                    "detailLevel": detailLevel,
-                  },
-                };
-
-                try {
-                  final response = await controller.generateDrawingFromInputs(
-                    type: "cooling_tower",
-                    inputData: data,
-                  );
-
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    response["success"] == true ? "Success" : "Error",
-                    response["message"] ?? "Something went wrong",
-                    backgroundColor: response["success"] == true
-                        ? Colors.green
-                        : Colors.red,
-                    colorText: Colors.white,
-                  );
-                } catch (e) {
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    "Error",
-                    e.toString(),
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+        ),
+        onPressed: isLoading ? null : _handleSubmission,
         child: isLoading
             ? const SizedBox(
                 height: 18,
@@ -424,5 +535,75 @@ class _CoolingTowerInputScreenState extends State<CoolingTowerInputScreen> {
             : const Text("Generate Cooling Tower Drawing"),
       ),
     );
+  }
+
+  void _handleSubmission() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => isLoading = true);
+
+    Map<String, dynamic> data = {
+      "geometry": {
+        "height": {"val": heightController.text, "unit": heightUnit},
+        "baseDiameter": {
+          "val": baseDiameterController.text,
+          "unit": baseDiaUnit,
+        },
+        "throatDiameter": {
+          "val": throatDiameterController.text,
+          "unit": throatDiaUnit,
+        },
+        "topDiameter": {"val": topDiameterController.text, "unit": topDiaUnit},
+        "shellThickness": {
+          "val": shellThicknessController.text,
+          "unit": thickUnit,
+        },
+      },
+      "thermal": {
+        "waterFlow": {"val": waterFlowController.text, "unit": flowUnit},
+        "inletTemp": {"val": inletTempController.text, "unit": tempInUnit},
+        "outletTemp": {"val": outletTempController.text, "unit": tempOutUnit},
+        "airFlow": airFlowController.text,
+      },
+      "mechanical": {
+        "towerType": towerType,
+        "fanDiameter": fanDiameterController.text,
+        "fanCount": fanCountController.text,
+        "fillHeight": fillHeightController.text,
+      },
+      "structure": {
+        "windLoad": {"val": windLoadController.text, "unit": windUnit},
+        "seismicZone": seismicZoneController.text,
+        "soilBearingCapacity": {"val": soilController.text, "unit": soilUnit},
+        "concreteGrade": concreteGradeController.text,
+        "steelGrade": steelGradeController.text,
+      },
+      "drawing": {
+        "scale": scale,
+        "sheetSize": sheetSize,
+        "detailLevel": detailLevel,
+      },
+    };
+
+    try {
+      final response = await controller.generateDrawingFromInputs(
+        type: "cooling_tower",
+        inputData: data,
+      );
+      setState(() => isLoading = false);
+      Get.snackbar(
+        response["success"] ? "Success" : "Error",
+        response["message"] ?? "",
+        backgroundColor: response["success"] ? Colors.green : Colors.red,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      setState(() => isLoading = false);
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 }

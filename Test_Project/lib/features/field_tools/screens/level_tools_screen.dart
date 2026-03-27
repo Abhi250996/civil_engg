@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 import '../controllers/field_tools_controller.dart';
 
 class LevelToolScreen extends StatefulWidget {
@@ -219,8 +219,8 @@ class _LevelToolScreenState extends State<LevelToolScreen> {
   Widget _btn(String text, IconData icon, VoidCallback onTap) {
     return ElevatedButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(text),
+      icon: Icon(icon, size: 18, color: Colors.white),
+      label: Text(text, style: TextStyle(color: Colors.white)),
       style: ElevatedButton.styleFrom(
         backgroundColor: accentBlue,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

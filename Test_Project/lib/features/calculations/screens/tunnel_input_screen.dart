@@ -13,25 +13,21 @@ class _TunnelInputScreenState extends State<TunnelInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  /// 🎨 COLORS
+  /// 🎨 BRAND COLORS
   static const Color primaryBlue = Color(0xFF1E3A8A);
   static const Color accentBlue = Color(0xFF3B82F6);
   static const Color bgColor = Color(0xFFF8FAFC);
 
-  /// CONTROLLERS (UNCHANGED)
+  /// CONTROLLERS
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
-
   final lengthController = TextEditingController();
   final diameterController = TextEditingController();
   final depthController = TextEditingController();
-
   final rockStrengthController = TextEditingController();
   final groundwaterController = TextEditingController();
-
   final liningThicknessController = TextEditingController();
   final rebarDiameterController = TextEditingController();
-
   final ventilationDiameterController = TextEditingController();
   final drainageWidthController = TextEditingController();
 
@@ -39,26 +35,28 @@ class _TunnelInputScreenState extends State<TunnelInputScreen> {
   String rockType = "Hard Rock";
   String excavationMethod = "TBM";
   String concreteGrade = "M30";
-
   String scale = "1:200";
   String sheetSize = "A1";
   String detailLevel = "Standard";
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width > 800;
+    final isDesktop = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text("Tunnel Design"),
+        title: const Text(
+          "Tunnel Design Engineering",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: primaryBlue,
         elevation: 0,
+        centerTitle: false,
       ),
-
-      /// 🔥 GRADIENT
       body: Container(
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [primaryBlue, accentBlue],
@@ -66,16 +64,12 @@ class _TunnelInputScreenState extends State<TunnelInputScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 1400),
-            padding: const EdgeInsets.all(20),
-
-            child: Form(
-              key: formKey,
-              child: isDesktop
-                  ? _desktopLayout()
-                  : SingleChildScrollView(child: _mobileLayout()),
+        child: SingleChildScrollView(
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+              child: Form(key: formKey, child: _mainContainer(isDesktop)),
             ),
           ),
         ),
@@ -83,282 +77,292 @@ class _TunnelInputScreenState extends State<TunnelInputScreen> {
     );
   }
 
-  // ================= DESKTOP =================
-  Widget _desktopLayout() {
+  Widget _mainContainer(bool isDesktop) {
     return Container(
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withOpacity(0.98),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.15),
             blurRadius: 30,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 15),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _row([
-            _cell("Project Name", projectNameController, false),
-            _cell("Location", locationController, false),
-            _cell("Length", lengthController, true),
-            _cell("Diameter", diameterController, true),
+          _sectionTitle("Project & Geometry"),
+          _responsiveRow(isDesktop, [
+            _buildField("Project Name", projectNameController),
+            _buildField("Location", locationController),
+            _buildField("Length (m)", lengthController, isNumber: true),
           ]),
-          _divider(),
-
-          _row([
-            _cell("Depth", depthController, true),
-            _cellDrop("Tunnel Type", tunnelType, [
+          _responsiveRow(isDesktop, [
+            _buildField("Diameter (m)", diameterController, isNumber: true),
+            _buildField("Depth (m)", depthController, isNumber: true),
+            _buildDropdown("Tunnel Type", tunnelType, [
               "Road Tunnel",
               "Railway Tunnel",
               "Metro Tunnel",
               "Utility Tunnel",
             ], (v) => setState(() => tunnelType = v!)),
-            _cellDrop("Rock Type", rockType, [
+          ]),
+
+          _divider(),
+          _sectionTitle("Geotechnical & Excavation"),
+          _responsiveRow(isDesktop, [
+            _buildDropdown("Rock Type", rockType, [
               "Soft Rock",
               "Hard Rock",
               "Soil",
             ], (v) => setState(() => rockType = v!)),
-            _cell("Rock Strength", rockStrengthController, true),
+            _buildField(
+              "Rock Strength (MPa)",
+              rockStrengthController,
+              isNumber: true,
+            ),
+            _buildField(
+              "Groundwater (m)",
+              groundwaterController,
+              isNumber: true,
+            ),
           ]),
-          _divider(),
-
-          _row([
-            _cell("Groundwater", groundwaterController, true),
-            _cellDrop("Method", excavationMethod, [
-              "TBM",
-              "NATM",
-              "Drill & Blast",
-            ], (v) => setState(() => excavationMethod = v!)),
-            _cell("Lining Thickness", liningThicknessController, true),
-            _cellDrop("Concrete", concreteGrade, [
-              "M25",
-              "M30",
-              "M35",
-            ], (v) => setState(() => concreteGrade = v!)),
+          _responsiveRow(isDesktop, [
+            _buildDropdown(
+              "Excavation Method",
+              excavationMethod,
+              ["TBM", "NATM", "Drill & Blast"],
+              (v) => setState(() => excavationMethod = v!),
+            ),
+            _buildField(
+              "Lining Thickness (mm)",
+              liningThicknessController,
+              isNumber: true,
+            ),
+            _buildDropdown(
+              "Concrete Grade",
+              concreteGrade,
+              ["M25", "M30", "M35", "M40"],
+              (v) => setState(() => concreteGrade = v!),
+            ),
           ]),
-          _divider(),
 
-          _row([
-            _cell("Rebar Diameter", rebarDiameterController, true),
-            _cell("Ventilation Dia", ventilationDiameterController, true),
-            _cell("Drainage Width", drainageWidthController, true),
-            _cellDrop("Scale", scale, [
+          _divider(),
+          _sectionTitle("Internal Systems & Drafting"),
+          _responsiveRow(isDesktop, [
+            _buildField(
+              "Rebar Dia (mm)",
+              rebarDiameterController,
+              isNumber: true,
+            ),
+            _buildField(
+              "Ventilation Dia (m)",
+              ventilationDiameterController,
+              isNumber: true,
+            ),
+            _buildField(
+              "Drainage Width (m)",
+              drainageWidthController,
+              isNumber: true,
+            ),
+          ]),
+          _responsiveRow(isDesktop, [
+            _buildDropdown("Drawing Scale", scale, [
               "1:100",
               "1:200",
               "1:500",
             ], (v) => setState(() => scale = v!)),
-          ]),
-          _divider(),
-
-          _row([
-            _cellDrop("Sheet", sheetSize, [
+            _buildDropdown("Sheet Size", sheetSize, [
               "A0",
               "A1",
               "A2",
               "A3",
             ], (v) => setState(() => sheetSize = v!)),
-            _cellDrop("Detail", detailLevel, [
+            _buildDropdown("Detail Level", detailLevel, [
               "Concept",
               "Standard",
               "Construction",
             ], (v) => setState(() => detailLevel = v!)),
-            const Expanded(child: SizedBox()),
-            const Expanded(child: SizedBox()),
           ]),
-          _divider(),
 
-          Padding(padding: const EdgeInsets.all(16), child: _submitButton()),
-        ],
-      ),
-    );
-  }
-
-  // ================= MOBILE =================
-  Widget _mobileLayout() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          _mField("Project Name", projectNameController, false),
-          _mField("Location", locationController, false),
-          _mField("Length", lengthController, true),
-          _mField("Diameter", diameterController, true),
-          _mField("Depth", depthController, true),
-          _mDrop("Tunnel Type", tunnelType, [
-            "Road Tunnel",
-            "Railway Tunnel",
-            "Metro Tunnel",
-            "Utility Tunnel",
-          ], (v) => setState(() => tunnelType = v!)),
-          _mDrop("Rock Type", rockType, [
-            "Soft Rock",
-            "Hard Rock",
-            "Soil",
-          ], (v) => setState(() => rockType = v!)),
-          _mField("Rock Strength", rockStrengthController, true),
-          _mField("Groundwater", groundwaterController, true),
-          _mDrop("Method", excavationMethod, [
-            "TBM",
-            "NATM",
-            "Drill & Blast",
-          ], (v) => setState(() => excavationMethod = v!)),
-          _mField("Lining Thickness", liningThicknessController, true),
-          _mDrop("Concrete", concreteGrade, [
-            "M25",
-            "M30",
-            "M35",
-          ], (v) => setState(() => concreteGrade = v!)),
-          _mField("Rebar Diameter", rebarDiameterController, true),
-          _mField("Ventilation Dia", ventilationDiameterController, true),
-          _mField("Drainage Width", drainageWidthController, true),
-          _mDrop("Scale", scale, [
-            "1:100",
-            "1:200",
-            "1:500",
-          ], (v) => setState(() => scale = v!)),
-          _mDrop("Sheet", sheetSize, [
-            "A0",
-            "A1",
-            "A2",
-            "A3",
-          ], (v) => setState(() => sheetSize = v!)),
-          _mDrop("Detail", detailLevel, [
-            "Concept",
-            "Standard",
-            "Construction",
-          ], (v) => setState(() => detailLevel = v!)),
-
-          const SizedBox(height: 20),
+          const SizedBox(height: 40),
           _submitButton(),
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  // ================= BUTTON (UNCHANGED LOGIC) =================
+  // ─── HELPERS ──────────────────────────────────────────
+
+  Widget _responsiveRow(bool isDesktop, List<Widget> children) {
+    if (isDesktop) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children
+              .map(
+                (e) => Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: e,
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      );
+    }
+    return Column(
+      children: children
+          .map(
+            (e) =>
+                Padding(padding: const EdgeInsets.only(bottom: 12), child: e),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: primaryBlue,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField(
+    String label,
+    TextEditingController c, {
+    bool isNumber = false,
+  }) {
+    return TextFormField(
+      controller: c,
+      keyboardType: isNumber
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
+      validator: (v) => v == null || v.isEmpty ? "Required" : null,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 13),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 16,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown(
+    String label,
+    String value,
+    List<String> items,
+    Function(String?) onChanged,
+  ) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      items: items
+          .map(
+            (e) => DropdownMenuItem(
+              value: e,
+              child: Text(e, style: const TextStyle(fontSize: 13)),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 20),
+    child: Divider(color: Colors.grey.shade300, thickness: 1),
+  );
+
   Widget _submitButton() {
     return SizedBox(
       width: double.infinity,
-      height: 55,
+      height: 60,
       child: ElevatedButton(
-        child: const Text("Generate Tunnel Drawing"),
-        onPressed: () {
-          if (!formKey.currentState!.validate()) return;
-
-          Map<String, dynamic> data = {
-            "project": {
-              "name": projectNameController.text,
-              "location": locationController.text,
-            },
-            "geometry": {
-              "length": lengthController.text,
-              "diameter": diameterController.text,
-              "depth": depthController.text,
-              "type": tunnelType,
-            },
-            "geotechnical": {
-              "rockType": rockType,
-              "rockStrength": rockStrengthController.text,
-              "groundwater": groundwaterController.text,
-            },
-            "excavation": {"method": excavationMethod},
-            "structure": {
-              "liningThickness": liningThicknessController.text,
-              "concreteGrade": concreteGrade,
-              "rebarDiameter": rebarDiameterController.text,
-            },
-            "systems": {
-              "ventilationDiameter": ventilationDiameterController.text,
-              "drainageWidth": drainageWidthController.text,
-            },
-            "drawing": {
-              "scale": scale,
-              "sheetSize": sheetSize,
-              "detailLevel": detailLevel,
-            },
-          };
-
-          controller.generateDrawingFromInputs(type: "tunnel", inputData: data);
-        },
-      ),
-    );
-  }
-
-  // ================= COMMON =================
-  Widget _row(List<Widget> children) =>
-      IntrinsicHeight(child: Row(children: children));
-
-  Widget _cell(String label, TextEditingController c, bool isNumber) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: TextFormField(
-          controller: c,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-          validator: (v) => v == null || v.isEmpty ? "Required" : null,
-          decoration: InputDecoration(labelText: label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 5,
+        ),
+        onPressed: _handleSubmission,
+        child: const Text(
+          "GENERATE TECHNICAL DRAWING",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            letterSpacing: 1.1,
+          ),
         ),
       ),
     );
   }
 
-  Widget _cellDrop(
-    String label,
-    String value,
-    List<String> items,
-    Function(String?) onChanged,
-  ) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: DropdownButtonFormField(
-          value: value,
-          items: items
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-              .toList(),
-          onChanged: onChanged,
-          decoration: InputDecoration(labelText: label),
-        ),
-      ),
-    );
-  }
+  void _handleSubmission() {
+    if (!formKey.currentState!.validate()) return;
 
-  Widget _mField(String label, TextEditingController c, bool isNumber) {
-    return Padding(
-      padding: const EdgeInsets.all(10),
-      child: TextFormField(
-        controller: c,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        validator: (v) => v == null || v.isEmpty ? "Required" : null,
-        decoration: InputDecoration(labelText: label),
-      ),
-    );
-  }
+    Map<String, dynamic> data = {
+      "project": {
+        "name": projectNameController.text,
+        "location": locationController.text,
+      },
+      "geometry": {
+        "length": lengthController.text,
+        "diameter": diameterController.text,
+        "depth": depthController.text,
+        "type": tunnelType,
+      },
+      "geotechnical": {
+        "rockType": rockType,
+        "rockStrength": rockStrengthController.text,
+        "groundwater": groundwaterController.text,
+      },
+      "excavation": {"method": excavationMethod},
+      "structure": {
+        "liningThickness": liningThicknessController.text,
+        "concreteGrade": concreteGrade,
+        "rebarDiameter": rebarDiameterController.text,
+      },
+      "systems": {
+        "ventilationDiameter": ventilationDiameterController.text,
+        "drainageWidth": drainageWidthController.text,
+      },
+      "drawing": {
+        "scale": scale,
+        "sheetSize": sheetSize,
+        "detailLevel": detailLevel,
+      },
+    };
 
-  Widget _mDrop(
-    String label,
-    String value,
-    List<String> items,
-    Function(String?) onChanged,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(10),
-      child: DropdownButtonFormField(
-        value: value,
-        items: items
-            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-            .toList(),
-        onChanged: onChanged,
-        decoration: InputDecoration(labelText: label),
-      ),
-    );
+    controller.generateDrawingFromInputs(type: "tunnel", inputData: data);
   }
-
-  Widget _divider() => Divider(color: Colors.grey.shade200);
 }

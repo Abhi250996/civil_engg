@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 
 class SlopeCalcScreen extends StatefulWidget {
   const SlopeCalcScreen({super.key});
@@ -197,7 +197,10 @@ class _SlopeCalcScreenState extends State<SlopeCalcScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: accentBlue,
                                 ),
-                                child: const Text("CALCULATE"),
+                                child: const Text(
+                                  "CALCULATE",
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
 

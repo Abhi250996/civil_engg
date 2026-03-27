@@ -15,47 +15,38 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
 
   bool isLoading = false;
 
-  /// 🎨 YOUR COLORS
+  /// 🎨 COLORS
   static const Color primaryBlue = Color(0xFF1E3A8A);
   static const Color accentBlue = Color(0xFF3B82F6);
   static const Color bgColor = Color(0xFFF8FAFC);
 
-  /// CONTROLLERS (UNCHANGED)
+  /// CONTROLLERS
   final farmNameController = TextEditingController();
   final locationController = TextEditingController();
-
   final landLengthController = TextEditingController();
   final landWidthController = TextEditingController();
-
   final panelPowerController = TextEditingController();
   final panelLengthController = TextEditingController();
   final panelWidthController = TextEditingController();
-
   final tiltController = TextEditingController();
   final rowSpacingController = TextEditingController();
   final panelsPerRowController = TextEditingController();
   final rowsController = TextEditingController();
-
   final inverterCountController = TextEditingController();
   final transformerController = TextEditingController();
   final trenchWidthController = TextEditingController();
-
   final pileDepthController = TextEditingController();
   final soilController = TextEditingController();
 
   String terrain = "Flat";
   String panelType = "Monocrystalline";
   String mountType = "Fixed Tilt";
-
   String scale = "1:200";
   String sheetSize = "A1";
   String detailLevel = "Standard";
 
   @override
   Widget build(BuildContext context) {
-    final args = Get.arguments ?? {};
-    final project = args['project'];
-
     final isDesktop = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
@@ -66,8 +57,6 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
         foregroundColor: primaryBlue,
         elevation: 0,
       ),
-
-      /// 🔥 GRADIENT BACKGROUND
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -80,12 +69,32 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 1400),
             padding: const EdgeInsets.all(20),
-
             child: Form(
               key: formKey,
-              child: isDesktop
-                  ? _desktopLayout(project)
-                  : SingleChildScrollView(child: _mobileLayout(project)),
+              child: Obx(() {
+                // Reactive Unit Suffixes
+                String u =
+                    controller.selectedUnit.value == "feet" ||
+                        controller.selectedUnit.value == "inch"
+                    ? "ft"
+                    : "m";
+                String sm =
+                    controller.selectedUnit.value == "feet" ||
+                        controller.selectedUnit.value == "inch"
+                    ? "in"
+                    : "mm";
+                String soilUnit =
+                    controller.selectedUnit.value == "feet" ||
+                        controller.selectedUnit.value == "inch"
+                    ? "psf"
+                    : "kN/m²";
+
+                return isDesktop
+                    ? _desktopLayout(u, sm, soilUnit)
+                    : SingleChildScrollView(
+                        child: _mobileLayout(u, sm, soilUnit),
+                      );
+              }),
             ),
           ),
         ),
@@ -94,7 +103,7 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
   }
 
   // ================= DESKTOP =================
-  Widget _desktopLayout(dynamic project) {
+  Widget _desktopLayout(String u, String sm, String soilUnit) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.95),
@@ -110,14 +119,19 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
       child: Column(
         children: [
           _row([
+            _cellDrop(
+              "Unit System",
+              controller.selectedUnit.value,
+              ["meter", "feet", "inch", "centimeter"],
+              (v) => controller.selectedUnit.value = v!,
+            ),
             _cell("Farm Name", farmNameController, false),
             _cell("Location", locationController, false),
-            _cell("Length", landLengthController, true),
-            _cell("Width", landWidthController, true),
+            _cell("Site Length", landLengthController, true, suffix: u),
           ]),
           _divider(),
-
           _row([
+            _cell("Site Width", landWidthController, true, suffix: u),
             _cellDrop("Terrain", terrain, [
               "Flat",
               "Slight Slope",
@@ -128,44 +142,40 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
               "Polycrystalline",
               "Thin Film",
             ], (v) => setState(() => panelType = v!)),
-            _cell("Power", panelPowerController, true),
-            _cell("Panel L", panelLengthController, true),
+            _cell("Power", panelPowerController, true, suffix: "W"),
           ]),
           _divider(),
-
           _row([
-            _cell("Panel W", panelWidthController, true),
-            _cell("Tilt", tiltController, true),
-            _cell("Row Spacing", rowSpacingController, true),
+            _cell("Panel L", panelLengthController, true, suffix: sm),
+            _cell("Panel W", panelWidthController, true, suffix: sm),
+            _cell("Tilt", tiltController, true, suffix: "°"),
+            _cell("Row Spacing", rowSpacingController, true, suffix: u),
+          ]),
+          _divider(),
+          _row([
             _cell("Panels/Row", panelsPerRowController, true),
-          ]),
-          _divider(),
-
-          _row([
             _cell("Rows", rowsController, true),
             _cell("Inverters", inverterCountController, true),
             _cell("Transformer", transformerController, true),
-            _cell("Trench", trenchWidthController, true),
           ]),
           _divider(),
-
           _row([
+            _cell("Trench W", trenchWidthController, true, suffix: sm),
             _cellDrop("Mount", mountType, [
               "Fixed Tilt",
               "Single Axis Tracker",
               "Dual Axis Tracker",
             ], (v) => setState(() => mountType = v!)),
-            _cell("Pile Depth", pileDepthController, true),
-            _cell("Soil", soilController, true),
+            _cell("Pile Depth", pileDepthController, true, suffix: u),
+            _cell("Soil Capacity", soilController, true, suffix: soilUnit),
+          ]),
+          _divider(),
+          _row([
             _cellDrop("Scale", scale, [
               "1:100",
               "1:200",
               "1:500",
             ], (v) => setState(() => scale = v!)),
-          ]),
-          _divider(),
-
-          _row([
             _cellDrop("Sheet", sheetSize, [
               "A0",
               "A1",
@@ -178,15 +188,13 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
               "Construction",
             ], (v) => setState(() => detailLevel = v!)),
             const Expanded(child: SizedBox()),
-            const Expanded(child: SizedBox()),
           ]),
           _divider(),
-
           Padding(
             padding: const EdgeInsets.all(16),
             child: Align(
               alignment: Alignment.centerRight,
-              child: _submitButton(), // 👈 SAME BUTTON
+              child: _submitButton(),
             ),
           ),
         ],
@@ -195,7 +203,7 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
   }
 
   // ================= MOBILE =================
-  Widget _mobileLayout(dynamic project) {
+  Widget _mobileLayout(String u, String sm, String soilUnit) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.95),
@@ -203,10 +211,16 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
       ),
       child: Column(
         children: [
+          _mDrop(
+            "Unit System",
+            controller.selectedUnit.value,
+            ["meter", "feet", "inch", "centimeter"],
+            (v) => controller.selectedUnit.value = v!,
+          ),
           _mField("Farm Name", farmNameController, false),
           _mField("Location", locationController, false),
-          _mField("Length", landLengthController, true),
-          _mField("Width", landWidthController, true),
+          _mField("Site Length", landLengthController, true, suffix: u),
+          _mField("Site Width", landWidthController, true, suffix: u),
           _mDrop("Terrain", terrain, [
             "Flat",
             "Slight Slope",
@@ -217,23 +231,23 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
             "Polycrystalline",
             "Thin Film",
           ], (v) => setState(() => panelType = v!)),
-          _mField("Power", panelPowerController, true),
-          _mField("Panel Length", panelLengthController, true),
-          _mField("Panel Width", panelWidthController, true),
-          _mField("Tilt", tiltController, true),
-          _mField("Row Spacing", rowSpacingController, true),
+          _mField("Power", panelPowerController, true, suffix: "W"),
+          _mField("Panel Length", panelLengthController, true, suffix: sm),
+          _mField("Panel Width", panelWidthController, true, suffix: sm),
+          _mField("Tilt", tiltController, true, suffix: "°"),
+          _mField("Row Spacing", rowSpacingController, true, suffix: u),
           _mField("Panels/Row", panelsPerRowController, true),
           _mField("Rows", rowsController, true),
           _mField("Inverters", inverterCountController, true),
           _mField("Transformer", transformerController, true),
-          _mField("Trench", trenchWidthController, true),
-          _mDrop("Mount", mountType, [
+          _mField("Trench Width", trenchWidthController, true, suffix: sm),
+          _mDrop("Mount Type", mountType, [
             "Fixed Tilt",
             "Single Axis Tracker",
             "Dual Axis Tracker",
           ], (v) => setState(() => mountType = v!)),
-          _mField("Pile Depth", pileDepthController, true),
-          _mField("Soil", soilController, true),
+          _mField("Pile Depth", pileDepthController, true, suffix: u),
+          _mField("Soil Capacity", soilController, true, suffix: soilUnit),
           _mDrop("Scale", scale, [
             "1:100",
             "1:200",
@@ -250,94 +264,25 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
             "Standard",
             "Construction",
           ], (v) => setState(() => detailLevel = v!)),
-
           const SizedBox(height: 20),
-          _submitButton(), // 👈 SAME BUTTON
+          _submitButton(),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  // ================= BUTTON (UNCHANGED) =================
+  // ================= BUTTON =================
   Widget _submitButton() {
     return SizedBox(
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: isLoading
-            ? null
-            : () async {
-                if (!formKey.currentState!.validate()) return;
-
-                setState(() => isLoading = true);
-
-                final data = {
-                  "project": {
-                    "name": farmNameController.text,
-                    "location": locationController.text,
-                  },
-                  "site": {
-                    "length": landLengthController.text,
-                    "width": landWidthController.text,
-                    "terrain": terrain,
-                  },
-                  "panel": {
-                    "type": panelType,
-                    "power": panelPowerController.text,
-                    "length": panelLengthController.text,
-                    "width": panelWidthController.text,
-                  },
-                  "array": {
-                    "tilt": tiltController.text,
-                    "rowSpacing": rowSpacingController.text,
-                    "panelsPerRow": panelsPerRowController.text,
-                    "rows": rowsController.text,
-                  },
-                  "electrical": {
-                    "inverters": inverterCountController.text,
-                    "transformer": transformerController.text,
-                    "trenchWidth": trenchWidthController.text,
-                  },
-                  "structure": {
-                    "mountType": mountType,
-                    "pileDepth": pileDepthController.text,
-                    "soilBearingCapacity": soilController.text,
-                  },
-                  "drawing": {
-                    "scale": scale,
-                    "sheetSize": sheetSize,
-                    "detailLevel": detailLevel,
-                  },
-                };
-
-                try {
-                  final res = await controller.generateDrawingFromInputs(
-                    type: "solar_farm",
-                    inputData: data,
-                  );
-
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    res["success"] == true ? "Success" : "Error",
-                    res["message"] ?? "Something went wrong",
-                    backgroundColor: res["success"] == true
-                        ? Colors.green
-                        : Colors.red,
-                    colorText: Colors.white,
-                  );
-                } catch (e) {
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    "Error",
-                    e.toString(),
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+        ),
+        onPressed: isLoading ? null : _handleSubmit,
         child: isLoading
             ? const SizedBox(
                 height: 22,
@@ -352,19 +297,93 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
     );
   }
 
-  // ================= COMMON =================
+  Future<void> _handleSubmit() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => isLoading = true);
+
+    final data = {
+      "project": {
+        "name": farmNameController.text,
+        "location": locationController.text,
+      },
+      "unitSystem": controller.selectedUnit.value,
+      "site": {
+        "length": landLengthController.text,
+        "width": landWidthController.text,
+        "terrain": terrain,
+      },
+      "panel": {
+        "type": panelType,
+        "power": panelPowerController.text,
+        "length": panelLengthController.text,
+        "width": panelWidthController.text,
+      },
+      "array": {
+        "tilt": tiltController.text,
+        "rowSpacing": rowSpacingController.text,
+        "panelsPerRow": panelsPerRowController.text,
+        "rows": rowsController.text,
+      },
+      "electrical": {
+        "inverters": inverterCountController.text,
+        "transformer": transformerController.text,
+        "trenchWidth": trenchWidthController.text,
+      },
+      "structure": {
+        "mountType": mountType,
+        "pileDepth": pileDepthController.text,
+        "soilBearingCapacity": soilController.text,
+      },
+      "drawing": {
+        "scale": scale,
+        "sheetSize": sheetSize,
+        "detailLevel": detailLevel,
+      },
+    };
+
+    try {
+      final res = await controller.generateDrawingFromInputs(
+        type: "solar_farm",
+        inputData: data,
+      );
+      Get.snackbar(
+        res["success"] == true ? "Success" : "Error",
+        res["message"] ?? "Processing complete",
+        backgroundColor: res["success"] == true ? Colors.green : Colors.red,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  // ================= COMMON HELPERS =================
   Widget _row(List<Widget> children) =>
       IntrinsicHeight(child: Row(children: children));
 
-  Widget _cell(String label, TextEditingController c, bool isNumber) {
+  Widget _cell(
+    String label,
+    TextEditingController c,
+    bool isNumber, {
+    String suffix = "",
+  }) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.all(10),
         child: TextFormField(
           controller: c,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          keyboardType: isNumber
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
           validator: (v) => v == null || v.isEmpty ? "Required" : null,
-          decoration: InputDecoration(labelText: label),
+          decoration: InputDecoration(labelText: label, suffixText: suffix),
         ),
       ),
     );
@@ -382,7 +401,12 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
         child: DropdownButtonFormField(
           value: value,
           items: items
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .map(
+                (e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(e, style: const TextStyle(fontSize: 12)),
+                ),
+              )
               .toList(),
           onChanged: onChanged,
           decoration: InputDecoration(labelText: label),
@@ -391,14 +415,21 @@ class _SolarFarmInputScreenState extends State<SolarFarmInputScreen> {
     );
   }
 
-  Widget _mField(String label, TextEditingController c, bool isNumber) {
+  Widget _mField(
+    String label,
+    TextEditingController c,
+    bool isNumber, {
+    String suffix = "",
+  }) {
     return Padding(
       padding: const EdgeInsets.all(10),
       child: TextFormField(
         controller: c,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        keyboardType: isNumber
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.text,
         validator: (v) => v == null || v.isEmpty ? "Required" : null,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(labelText: label, suffixText: suffix),
       ),
     );
   }

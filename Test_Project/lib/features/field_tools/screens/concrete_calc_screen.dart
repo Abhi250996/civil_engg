@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 
 class ConcreteCalcScreen extends StatefulWidget {
   const ConcreteCalcScreen({super.key});
@@ -329,7 +329,10 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: accentBlue,
                                   ),
-                                  child: const Text("Calculate"),
+                                  child: const Text(
+                                    "Calculate",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -339,7 +342,10 @@ class _ConcreteCalcScreenState extends State<ConcreteCalcScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.grey,
                                   ),
-                                  child: const Text("Reset"),
+                                  child: const Text(
+                                    "Reset",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
                             ],

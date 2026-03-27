@@ -16,9 +16,19 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
   bool isLoading = false;
 
   /// 🎨 UI COLORS
-  static const Color primaryBlue = Color(0xFF7b7eba);
-  static const Color accentBlue = Color(0xFFbdbcdc);
-  static const Color accentBlue2 = Color(0xFFdeddee);
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color secondaryBlue = Color(0xFF3B82F6);
+  static const Color bgColor = Color(0xFFF8FAFC);
+
+  /// UNIT OPTIONS
+  final List<String> unitOptions = [
+    "Meter",
+    "Feet",
+    "Foot",
+    "Inch",
+    "Yard",
+    "Centimeter",
+  ];
 
   /// CONTROLLERS
   final projectNameController = TextEditingController();
@@ -40,6 +50,16 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
   String sheetSize = "A1";
   String detailLevel = "Standard";
 
+  /// INDIVIDUAL UNIT STATES
+  String lengthUnit = "Meter";
+  String widthUnit = "Meter";
+  String heightUnit = "Meter";
+  String frontUnit = "Meter";
+  String rearUnit = "Meter";
+  String sideUnit = "Meter";
+  String soilUnit = "kN/m²";
+  String loadUnit = "kN/m²";
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 700;
@@ -52,22 +72,18 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
       ),
-
-      /// 🔥 GRADIENT BACKGROUND
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [primaryBlue, accentBlue, accentBlue2],
+            colors: [primaryBlue, secondaryBlue, bgColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 1200),
             padding: const EdgeInsets.all(16),
-
             child: Form(
               key: formKey,
               child: isDesktop ? _desktopLayout() : _mobileLayout(),
@@ -84,25 +100,27 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.95),
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _row([
-            _cell("Project Name", projectNameController, false),
-            _cell("Location", locationController, false),
-            _cell("Length (m)", plotLengthController),
-            _cell("Width (m)", plotWidthController),
+            _cell("Project Name", projectNameController, isNumber: false),
+            _cell("Location", locationController, isNumber: false),
+            _cellWithUnit(
+              "Length",
+              plotLengthController,
+              lengthUnit,
+              (v) => setState(() => lengthUnit = v!),
+            ),
+            _cellWithUnit(
+              "Width",
+              plotWidthController,
+              widthUnit,
+              (v) => setState(() => widthUnit = v!),
+            ),
           ]),
           _divider(),
-
           _row([
             _cellDrop("Orientation", orientation, [
               "North",
@@ -112,21 +130,51 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
             ], (v) => setState(() => orientation = v!)),
             _cell("Floors", floorsController),
             _cell("Rooms", roomsController),
-            _cell("Floor Height", floorHeightController),
+            _cellWithUnit(
+              "Floor Height",
+              floorHeightController,
+              heightUnit,
+              (v) => setState(() => heightUnit = v!),
+            ),
           ]),
           _divider(),
-
           _row([
-            _cell("Front", frontSetbackController),
-            _cell("Rear", rearSetbackController),
-            _cell("Side", sideSetbackController),
-            _cell("Soil SBC", soilController),
+            _cellWithUnit(
+              "Front Setback",
+              frontSetbackController,
+              frontUnit,
+              (v) => setState(() => frontUnit = v!),
+            ),
+            _cellWithUnit(
+              "Rear Setback",
+              rearSetbackController,
+              rearUnit,
+              (v) => setState(() => rearUnit = v!),
+            ),
+            _cellWithUnit(
+              "Side Setback",
+              sideSetbackController,
+              sideUnit,
+              (v) => setState(() => sideUnit = v!),
+            ),
+            _cellWithUnit(
+              "Soil SBC",
+              soilController,
+              soilUnit,
+              (v) => setState(() => soilUnit = v!),
+              customUnits: ["kN/m²", "psf"],
+            ),
           ]),
           _divider(),
-
           _row([
             _cell("Seismic Zone", seismicZoneController),
-            _cell("Design Load", designLoadController),
+            _cellWithUnit(
+              "Design Load",
+              designLoadController,
+              loadUnit,
+              (v) => setState(() => loadUnit = v!),
+              customUnits: ["kN/m²", "psf"],
+            ),
             _cellDrop("Scale", scale, [
               "1:50",
               "1:100",
@@ -140,7 +188,6 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
             ], (v) => setState(() => sheetSize = v!)),
           ]),
           _divider(),
-
           _row([
             _cellDrop("Detail Level", detailLevel, [
               "Concept",
@@ -152,7 +199,6 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
             const Expanded(child: SizedBox()),
           ]),
           _divider(),
-
           Padding(
             padding: const EdgeInsets.all(12),
             child: Align(
@@ -175,10 +221,24 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
         ),
         child: Column(
           children: [
-            _mobileField("Project Name", projectNameController, false),
-            _mobileField("Location", locationController, false),
-            _mobileField("Length (m)", plotLengthController),
-            _mobileField("Width (m)", plotWidthController),
+            _mobileField(
+              "Project Name",
+              projectNameController,
+              isNumber: false,
+            ),
+            _mobileField("Location", locationController, isNumber: false),
+            _mobileFieldWithUnit(
+              "Length",
+              plotLengthController,
+              lengthUnit,
+              (v) => setState(() => lengthUnit = v!),
+            ),
+            _mobileFieldWithUnit(
+              "Width",
+              plotWidthController,
+              widthUnit,
+              (v) => setState(() => widthUnit = v!),
+            ),
             _mobileDrop("Orientation", orientation, [
               "North",
               "South",
@@ -187,13 +247,45 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
             ], (v) => setState(() => orientation = v!)),
             _mobileField("Floors", floorsController),
             _mobileField("Rooms", roomsController),
-            _mobileField("Floor Height", floorHeightController),
-            _mobileField("Front", frontSetbackController),
-            _mobileField("Rear", rearSetbackController),
-            _mobileField("Side", sideSetbackController),
-            _mobileField("Soil SBC", soilController),
+            _mobileFieldWithUnit(
+              "Floor Height",
+              floorHeightController,
+              heightUnit,
+              (v) => setState(() => heightUnit = v!),
+            ),
+            _mobileFieldWithUnit(
+              "Front Setback",
+              frontSetbackController,
+              frontUnit,
+              (v) => setState(() => frontUnit = v!),
+            ),
+            _mobileFieldWithUnit(
+              "Rear Setback",
+              rearSetbackController,
+              rearUnit,
+              (v) => setState(() => rearUnit = v!),
+            ),
+            _mobileFieldWithUnit(
+              "Side Setback",
+              sideSetbackController,
+              sideUnit,
+              (v) => setState(() => sideUnit = v!),
+            ),
+            _mobileFieldWithUnit(
+              "Soil SBC",
+              soilController,
+              soilUnit,
+              (v) => setState(() => soilUnit = v!),
+              customUnits: ["kN/m²", "psf"],
+            ),
             _mobileField("Seismic Zone", seismicZoneController),
-            _mobileField("Design Load", designLoadController),
+            _mobileFieldWithUnit(
+              "Design Load",
+              designLoadController,
+              loadUnit,
+              (v) => setState(() => loadUnit = v!),
+              customUnits: ["kN/m²", "psf"],
+            ),
             _mobileDrop("Scale", scale, [
               "1:50",
               "1:100",
@@ -219,11 +311,93 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
     );
   }
 
-  /// ================= COMMON =================
+  /// ================= REUSABLE UNIT PICKER =================
+  Widget _unitPicker(
+    String currentVal,
+    List<String> options,
+    Function(String?) onChanged,
+  ) {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: currentVal,
+        icon: const Icon(Icons.arrow_drop_down, size: 14, color: secondaryBlue),
+        style: const TextStyle(
+          color: primaryBlue,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+        items: options
+            .map((val) => DropdownMenuItem(value: val, child: Text(val)))
+            .toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  /// ================= CELL HELPERS WITH UNITS =================
+  Widget _cellWithUnit(
+    String label,
+    TextEditingController c,
+    String currentUnit,
+    Function(String?) onUnitChanged, {
+    List<String>? customUnits,
+  }) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: TextFormField(
+          controller: c,
+          keyboardType: TextInputType.number,
+          validator: (v) => v!.isEmpty ? "Required" : null,
+          decoration: InputDecoration(
+            labelText: label,
+            suffixIcon: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: _unitPicker(
+                currentUnit,
+                customUnits ?? unitOptions,
+                onUnitChanged,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _mobileFieldWithUnit(
+    String label,
+    TextEditingController c,
+    String currentUnit,
+    Function(String?) onUnitChanged, {
+    List<String>? customUnits,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: TextFormField(
+        controller: c,
+        keyboardType: TextInputType.number,
+        validator: (v) => v!.isEmpty ? "Required" : null,
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _unitPicker(
+              currentUnit,
+              customUnits ?? unitOptions,
+              onUnitChanged,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ================= STANDARD HELPERS =================
   Widget _row(List<Widget> children) =>
       IntrinsicHeight(child: Row(children: children));
 
-  Widget _cell(String label, TextEditingController c, [bool isNumber = true]) {
+  Widget _cell(String label, TextEditingController c, {bool isNumber = true}) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -260,9 +434,9 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
 
   Widget _mobileField(
     String label,
-    TextEditingController c, [
+    TextEditingController c, {
     bool isNumber = true,
-  ]) {
+  }) {
     return Padding(
       padding: const EdgeInsets.all(10),
       child: TextFormField(
@@ -295,88 +469,19 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
 
   Widget _divider() => Divider(color: Colors.grey.shade200);
 
-  /// ================= BUTTON =================
   Widget _submitButton() {
     return SizedBox(
       height: 40,
       child: ElevatedButton(
-        onPressed: isLoading
-            ? null
-            : () async {
-                if (!formKey.currentState!.validate()) return;
-
-                setState(() => isLoading = true);
-
-                Map<String, dynamic> data = {
-                  "project": {
-                    "name": projectNameController.text,
-                    "location": locationController.text,
-                  },
-                  "site": {
-                    "length": plotLengthController.text,
-                    "width": plotWidthController.text,
-                    "orientation": orientation,
-                  },
-                  "building": {
-                    "floors": floorsController.text,
-                    "rooms": roomsController.text,
-                    "floorHeight": floorHeightController.text,
-                  },
-                  "setbacks": {
-                    "front": frontSetbackController.text,
-                    "rear": rearSetbackController.text,
-                    "side": sideSetbackController.text,
-                  },
-                  "structure": {
-                    "soilBearingCapacity": soilController.text,
-                    "seismicZone": seismicZoneController.text,
-                    "designLoad": designLoadController.text,
-                  },
-                  "drawing": {
-                    "scale": scale,
-                    "sheetSize": sheetSize,
-                    "detailLevel": detailLevel,
-                  },
-                };
-
-                try {
-                  final response = await controller.generateDrawingFromInputs(
-                    type: "building",
-                    inputData: data,
-                  );
-
-                  setState(() => isLoading = false);
-
-                  if (response["success"] == true) {
-                    Get.snackbar(
-                      "Success",
-                      response["message"] ?? "Drawing generated",
-                      backgroundColor: Colors.green,
-                      colorText: Colors.white,
-                    );
-                  } else {
-                    Get.snackbar(
-                      "Error",
-                      response["message"] ?? "Something went wrong",
-                      backgroundColor: Colors.red,
-                      colorText: Colors.white,
-                    );
-                  }
-                } catch (e) {
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    "Error",
-                    e.toString(),
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+        ),
+        onPressed: isLoading ? null : _submitData,
         child: isLoading
             ? const SizedBox(
-                height: 18,
                 width: 18,
+                height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: Colors.white,
@@ -385,5 +490,62 @@ class _BuildingInputScreenState extends State<BuildingInputScreen> {
             : const Text("Generate Building Drawing"),
       ),
     );
+  }
+
+  void _submitData() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => isLoading = true);
+
+    Map<String, dynamic> data = {
+      "project": {
+        "name": projectNameController.text,
+        "location": locationController.text,
+      },
+      "site": {
+        "length": plotLengthController.text,
+        "length_unit": lengthUnit,
+        "width": plotWidthController.text,
+        "width_unit": widthUnit,
+        "orientation": orientation,
+      },
+      "building": {
+        "floors": floorsController.text,
+        "rooms": roomsController.text,
+        "floorHeight": floorHeightController.text,
+        "height_unit": heightUnit,
+      },
+      "setbacks": {
+        "front": frontSetbackController.text,
+        "front_unit": frontUnit,
+        "rear": rearSetbackController.text,
+        "rear_unit": rearUnit,
+        "side": sideSetbackController.text,
+        "side_unit": sideUnit,
+      },
+      "structure": {
+        "soilSBC": soilController.text,
+        "soil_unit": soilUnit,
+        "seismic": seismicZoneController.text,
+        "designLoad": designLoadController.text,
+        "load_unit": loadUnit,
+      },
+      "drawing": {
+        "scale": scale,
+        "sheetSize": sheetSize,
+        "detailLevel": detailLevel,
+      },
+    };
+
+    try {
+      final res = await controller.generateDrawingFromInputs(
+        type: "building",
+        inputData: data,
+      );
+      setState(() => isLoading = false);
+      Get.snackbar(res["success"] ? "Success" : "Error", res["message"] ?? "");
+    } catch (e) {
+      setState(() => isLoading = false);
+      Get.snackbar("Error", e.toString());
+    }
   }
 }

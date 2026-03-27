@@ -257,7 +257,7 @@ class ProjectDetailScreen extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(backgroundColor: accentBlue),
-        child: Text(text),
+        child: Text(text, style: TextStyle(color: Colors.white)),
       ),
     );
   }

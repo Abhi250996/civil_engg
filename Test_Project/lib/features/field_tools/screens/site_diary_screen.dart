@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 import 'site_diary_list_screen.dart';
 
 class SiteDiaryScreen extends StatefulWidget {
@@ -95,7 +95,7 @@ class _SiteDiaryScreenState extends State<SiteDiaryScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: Text(text),
+        child: Text(text, style: TextStyle(color: Colors.white)),
       ),
     );
   }

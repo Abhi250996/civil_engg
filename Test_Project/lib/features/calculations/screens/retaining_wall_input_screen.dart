@@ -16,71 +16,84 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
 
   bool isLoading = false;
 
-  /// 🎨 COLORS
-  static const Color primaryBlue = Color(0xFF7b7eba);
-  static const Color accentBlue = Color(0xFFbdbcdc);
-  static const Color accentBlue2 = Color(0xFFdeddee);
+  /// 🎨 BRAND COLORS
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color secondaryBlue = Color(0xFF3B82F6);
+  static const Color bgColor = Color(0xFFF8FAFC);
 
-  /// CONTROLLERS (UNCHANGED)
+  /// 📏 UNIT SYSTEM
+  String selectedUnit = "meter";
+  final List<String> unitOptions = [
+    "feet",
+    "inch",
+    "centimeter",
+    "yard",
+    "meter",
+  ];
+
+  /// CONTROLLERS
   final projectNameController = TextEditingController();
-  final locationController = TextEditingController();
-
   final heightController = TextEditingController();
-  final lengthController = TextEditingController();
   final baseWidthController = TextEditingController();
   final stemThicknessController = TextEditingController();
-
   final soilWeightController = TextEditingController();
   final frictionController = TextEditingController();
   final soilBearingController = TextEditingController();
-
-  final drainSpacingController = TextEditingController();
-  final filterThicknessController = TextEditingController();
-
+  final seismicZoneController = TextEditingController();
   final concreteGradeController = TextEditingController();
   final steelGradeController = TextEditingController();
-  final seismicZoneController = TextEditingController();
+  final filterThicknessController = TextEditingController();
 
+  /// STATES
   String wallType = "Cantilever Wall";
   String drainType = "Weep Holes";
-
   String scale = "1:50";
   String sheetSize = "A1";
   String detailLevel = "Standard";
 
   @override
   Widget build(BuildContext context) {
-    final args = Get.arguments ?? {};
-    final project = args['project'];
-
-    final isDesktop = MediaQuery.of(context).size.width > 700;
+    final isDesktop = MediaQuery.of(context).size.width > 850;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text("Retaining Wall Design"),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        foregroundColor: primaryBlue,
         elevation: 0,
+        actions: [_unitPicker(), const SizedBox(width: 15)],
       ),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [primaryBlue, accentBlue, accentBlue2],
+            colors: [primaryBlue, secondaryBlue, bgColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 1500),
-            padding: const EdgeInsets.all(14),
+            constraints: const BoxConstraints(maxWidth: 1400),
+            padding: const EdgeInsets.all(16),
             child: Form(
               key: formKey,
-              child: isDesktop
-                  ? _desktopLayout(project)
-                  : SingleChildScrollView(child: _mobileLayout(project)),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.96),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  child: isDesktop ? _desktopLayout() : _mobileLayout(),
+                ),
+              ),
             ),
           ),
         ),
@@ -88,254 +101,164 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
     );
   }
 
-  // ================= DESKTOP =================
-  Widget _desktopLayout(dynamic project) {
+  Widget _unitPicker() {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: primaryBlue.withOpacity(0.2)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _row([
-            _cell("Project Name", projectNameController, isNumber: false),
-            _cell("Location", locationController, isNumber: false),
-            _cell("Height", heightController),
-            _cell("Length", lengthController),
-          ]),
-          _divider(),
-
-          _row([
-            _cell("Base Width", baseWidthController),
-            _cell("Stem Thickness", stemThicknessController),
-            _cellDrop("Wall Type", wallType, [
-              "Cantilever Wall",
-              "Gravity Wall",
-              "Counterfort Wall",
-              "Gabion Wall",
-            ], (v) => setState(() => wallType = v!)),
-            _cell("Soil Weight", soilWeightController),
-          ]),
-          _divider(),
-
-          _row([
-            _cell("Friction Angle", frictionController),
-            _cell("Bearing Capacity", soilBearingController),
-            _cellDrop("Drain Type", drainType, [
-              "Weep Holes",
-              "Drain Pipe",
-            ], (v) => setState(() => drainType = v!)),
-            _cell("Drain Spacing", drainSpacingController),
-          ]),
-          _divider(),
-
-          _row([
-            _cell("Filter Thickness", filterThicknessController),
-            _cell("Concrete Grade", concreteGradeController),
-            _cell("Steel Grade", steelGradeController),
-            _cell("Seismic Zone", seismicZoneController),
-          ]),
-          _divider(),
-
-          _row([
-            _cellDrop("Scale", scale, [
-              "1:50",
-              "1:100",
-              "1:200",
-            ], (v) => setState(() => scale = v!)),
-            _cellDrop("Sheet", sheetSize, [
-              "A0",
-              "A1",
-              "A2",
-              "A3",
-            ], (v) => setState(() => sheetSize = v!)),
-            _cellDrop("Detail", detailLevel, [
-              "Concept",
-              "Standard",
-              "Construction",
-            ], (v) => setState(() => detailLevel = v!)),
-            const Expanded(child: SizedBox()),
-          ]),
-          _divider(),
-
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: _submitButton(),
-            ),
-          ),
-        ],
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedUnit,
+          items: unitOptions
+              .map(
+                (u) => DropdownMenuItem(
+                  value: u,
+                  child: Text(
+                    u.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (v) => setState(() => selectedUnit = v!),
+        ),
       ),
     );
   }
 
-  // ================= MOBILE =================
-  Widget _mobileLayout(dynamic project) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          _mobileField("Project Name", projectNameController, isNumber: false),
-          _mobileField("Location", locationController, isNumber: false),
-          _mobileField("Height", heightController),
-          _mobileField("Length", lengthController),
-          _mobileField("Base Width", baseWidthController),
-          _mobileField("Stem Thickness", stemThicknessController),
-          _mobileDrop("Wall Type", wallType, [
+  // ─── DESKTOP ──────────────────────────────────────────
+  Widget _desktopLayout() {
+    return Column(
+      children: [
+        _sectionHeader("Project & Geometry"),
+        _row([
+          _cell("Project Name", projectNameController, isNumber: false),
+          _cell("Wall Height ($selectedUnit)", heightController),
+          _cell("Base Width ($selectedUnit)", baseWidthController),
+          _cellDrop("Wall Type", wallType, [
             "Cantilever Wall",
             "Gravity Wall",
             "Counterfort Wall",
-            "Gabion Wall",
           ], (v) => setState(() => wallType = v!)),
-          _mobileField("Soil Weight", soilWeightController),
-          _mobileField("Friction Angle", frictionController),
-          _mobileField("Bearing Capacity", soilBearingController),
-          _mobileDrop("Drain Type", drainType, [
+        ]),
+        _divider(),
+        _sectionHeader("Soil & Environment"),
+        _row([
+          _cell("Soil Weight (kN/$selectedUnit³)", soilWeightController),
+          _cell("Friction Angle (°)", frictionController),
+          _cell("Bearing Cap. (kPa)", soilBearingController),
+          _cell("Seismic Zone", seismicZoneController),
+        ]),
+        _divider(),
+        _sectionHeader("Drainage & Materials"),
+        _row([
+          _cellDrop("Drain Type", drainType, [
             "Weep Holes",
             "Drain Pipe",
           ], (v) => setState(() => drainType = v!)),
-          _mobileField("Drain Spacing", drainSpacingController),
-          _mobileField("Filter Thickness", filterThicknessController),
-          _mobileField("Concrete Grade", concreteGradeController),
-          _mobileField("Steel Grade", steelGradeController),
-          _mobileField("Seismic Zone", seismicZoneController),
-          _mobileDrop("Scale", scale, [
+          _cell("Concrete Grade", concreteGradeController),
+          _cell("Steel Grade (fy)", steelGradeController),
+          _cell("Filter Thick. ($selectedUnit)", filterThicknessController),
+        ]),
+        _divider(),
+        _sectionHeader("Drawing Settings"),
+        _row([
+          _cellDrop("Scale", scale, [
             "1:50",
             "1:100",
             "1:200",
           ], (v) => setState(() => scale = v!)),
-          _mobileDrop("Sheet", sheetSize, [
+          _cellDrop("Sheet", sheetSize, [
             "A0",
             "A1",
             "A2",
             "A3",
           ], (v) => setState(() => sheetSize = v!)),
-          _mobileDrop("Detail", detailLevel, [
+          _cellDrop("Detail", detailLevel, [
             "Concept",
             "Standard",
             "Construction",
           ], (v) => setState(() => detailLevel = v!)),
-          const SizedBox(height: 10),
-          _submitButton(),
-          const SizedBox(height: 10),
-        ],
+          const Expanded(child: SizedBox()),
+        ]),
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: _submitButton(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── MOBILE ───────────────────────────────────────────
+  Widget _mobileLayout() {
+    return Column(
+      children: [
+        _sectionHeader("General Info ($selectedUnit)"),
+        _mobileField("Project Name", projectNameController, isNumber: false),
+        _mobileField("Height ($selectedUnit)", heightController),
+        _mobileDrop("Wall Type", wallType, [
+          "Cantilever Wall",
+          "Gravity Wall",
+          "Counterfort Wall",
+        ], (v) => setState(() => wallType = v!)),
+        _sectionHeader("Soil Parameters"),
+        _mobileField("Friction Angle", frictionController),
+        _mobileField("Soil Weight (kN/$selectedUnit³)", soilWeightController),
+        _sectionHeader("Materials"),
+        _mobileField("Concrete Grade", concreteGradeController),
+        _mobileField("Steel Grade", steelGradeController),
+        const SizedBox(height: 20),
+        _submitButton(),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  /// ================= UI COMPONENTS =================
+
+  Widget _sectionHeader(String title) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: primaryBlue,
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
 
-  // ================= BUTTON (UNCHANGED) =================
-  Widget _submitButton() {
-    return SizedBox(
-      height: 40,
-      child: ElevatedButton(
-        onPressed: isLoading
-            ? null
-            : () async {
-                if (!formKey.currentState!.validate()) return;
-
-                setState(() => isLoading = true);
-
-                Map<String, dynamic> data = {
-                  "project": {
-                    "name": projectNameController.text,
-                    "location": locationController.text,
-                  },
-                  "geometry": {
-                    "height": heightController.text,
-                    "length": lengthController.text,
-                    "baseWidth": baseWidthController.text,
-                    "stemThickness": stemThicknessController.text,
-                  },
-                  "wall": {"type": wallType},
-                  "soil": {
-                    "unitWeight": soilWeightController.text,
-                    "frictionAngle": frictionController.text,
-                    "bearingCapacity": soilBearingController.text,
-                  },
-                  "drainage": {
-                    "type": drainType,
-                    "spacing": drainSpacingController.text,
-                    "filterThickness": filterThicknessController.text,
-                  },
-                  "structure": {
-                    "concreteGrade": concreteGradeController.text,
-                    "steelGrade": steelGradeController.text,
-                    "seismicZone": seismicZoneController.text,
-                  },
-                  "drawing": {
-                    "scale": scale,
-                    "sheetSize": sheetSize,
-                    "detailLevel": detailLevel,
-                  },
-                };
-
-                try {
-                  final response = await controller.generateDrawingFromInputs(
-                    type: "retaining_wall",
-                    inputData: data,
-                  );
-
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    response["success"] == true ? "Success" : "Error",
-                    response["message"] ?? "Something went wrong",
-                    backgroundColor: response["success"] == true
-                        ? Colors.green
-                        : Colors.red,
-                    colorText: Colors.white,
-                  );
-                } catch (e) {
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    "Error",
-                    e.toString(),
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              },
-        child: isLoading
-            ? const SizedBox(
-                height: 22,
-                width: 22,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : const Text("Generate Retaining Wall Drawing"),
-      ),
-    );
-  }
-
-  // ================= COMMON =================
   Widget _row(List<Widget> cells) =>
       IntrinsicHeight(child: Row(children: cells));
 
   Widget _cell(String label, TextEditingController c, {bool isNumber = true}) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         child: TextFormField(
           controller: c,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          keyboardType: isNumber
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
           validator: (v) => v!.isEmpty ? "Required" : null,
-          decoration: InputDecoration(labelText: label),
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
         ),
       ),
     );
@@ -349,14 +272,17 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
   ) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         child: DropdownButtonFormField(
           value: value,
           items: items
               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
               .toList(),
           onChanged: onChanged,
-          decoration: InputDecoration(labelText: label),
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
         ),
       ),
     );
@@ -368,12 +294,17 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
     bool isNumber = true,
   }) {
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: TextFormField(
         controller: c,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        keyboardType: isNumber
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
       ),
     );
   }
@@ -385,17 +316,92 @@ class _RetainingWallInputScreenState extends State<RetainingWallInputScreen> {
     Function(String?) onChanged,
   ) {
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: DropdownButtonFormField(
         value: value,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))
             .toList(),
         onChanged: onChanged,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
       ),
     );
   }
 
-  Widget _divider() => Divider(color: Colors.grey.shade200);
+  Widget _divider() =>
+      Divider(color: Colors.grey.shade300, indent: 15, endIndent: 15);
+
+  Widget _submitButton() {
+    return SizedBox(
+      height: 50,
+      width: 280,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        onPressed: isLoading ? null : _handleSubmission,
+        child: isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text(
+                "Generate Technical Drawing",
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+      ),
+    );
+  }
+
+  void _handleSubmission() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => isLoading = true);
+
+    Map<String, dynamic> data = {
+      "config": {"active_unit": selectedUnit},
+      "project": {"name": projectNameController.text},
+      "geometry": {
+        "height": heightController.text,
+        "baseWidth": baseWidthController.text,
+        "filterThickness": filterThicknessController.text,
+      },
+      "soil": {
+        "unitWeight": soilWeightController.text,
+        "frictionAngle": frictionController.text,
+        "bearingCapacity": soilBearingController.text,
+      },
+      "drawing": {"scale": scale, "sheet": sheetSize, "unit": selectedUnit},
+    };
+
+    try {
+      await controller.generateDrawingFromInputs(
+        type: "retaining_wall",
+        inputData: data,
+      );
+      Get.snackbar(
+        "Success",
+        "Wall data processed in $selectedUnit",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
 }

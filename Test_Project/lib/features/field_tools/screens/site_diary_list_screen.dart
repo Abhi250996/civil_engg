@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 import '../controllers/field_tools_controller.dart';
 
 class SiteDiaryListScreen extends StatelessWidget {

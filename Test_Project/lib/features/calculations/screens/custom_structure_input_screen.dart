@@ -17,54 +17,45 @@ class _CustomStructureInputScreenState
 
   bool isLoading = false;
 
-  /// 🎨 SAME COLORS
-  static const Color primaryBlue = Color(0xFF7b7eba);
-  static const Color accentBlue = Color(0xFFbdbcdc);
-  static const Color accentBlue2 = Color(0xFFdeddee);
+  /// 🎨 BRAND COLORS
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color secondaryBlue = Color(0xFF3B82F6);
+  static const Color bgColor = Color(0xFFF8FAFC);
+
+  /// UNIT OPTIONS
+  final List<String> lengthUnits = ["Meter", "Feet", "mm"];
+  final List<String> loadUnits = ["kN/m²", "psf", "kg/m²"];
+  final List<String> soilUnits = ["kN/m²", "tsf", "kPa"];
 
   /// CONTROLLERS
-  final structureNameController = TextEditingController();
-  final descriptionController = TextEditingController();
-
+  final nameController = TextEditingController();
+  final descController = TextEditingController();
   final lengthController = TextEditingController();
   final widthController = TextEditingController();
   final heightController = TextEditingController();
   final levelsController = TextEditingController();
-
   final designLoadController = TextEditingController();
   final liveLoadController = TextEditingController();
   final windLoadController = TextEditingController();
   final seismicZoneController = TextEditingController();
-
   final foundationDepthController = TextEditingController();
   final soilController = TextEditingController();
 
+  /// UNIT STATES
+  String lengthUnit = "Meter";
+  String widthUnit = "Meter";
+  String heightUnit = "Meter";
+  String dLoadUnit = "kN/m²";
+  String lLoadUnit = "kN/m²";
+  String windUnit = "kN/m²";
+  String depthUnit = "Meter";
+  String soilUnit = "kN/m²";
+
   String materialType = "Concrete";
   String foundationType = "Isolated Footing";
-
   String scale = "1:100";
   String sheetSize = "A1";
   String detailLevel = "Standard";
-
-  /// RESPONSIVE (NOT REMOVED)
-  int getCrossAxisCount(double width) {
-    if (width > 1200) return 5;
-    if (width > 800) return 3;
-    return 2;
-  }
-
-  Widget responsiveGrid(List<Widget> children) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return GridView.count(
-          crossAxisCount: getCrossAxisCount(constraints.maxWidth),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: children,
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,14 +69,12 @@ class _CustomStructureInputScreenState
         title: const Text("Custom Structure Design"),
         elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        foregroundColor: primaryBlue,
       ),
-
-      /// GRADIENT
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [primaryBlue, accentBlue, accentBlue2],
+            colors: [primaryBlue, secondaryBlue, bgColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -112,52 +101,82 @@ class _CustomStructureInputScreenState
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.95),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          /// PROJECT
           Padding(
             padding: const EdgeInsets.all(12),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text("Project: ${project?.name ?? "Unnamed"}"),
+              child: Text(
+                "Project: ${project?.name ?? "Unnamed"}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryBlue,
+                ),
+              ),
             ),
           ),
           _divider(),
-
           _row([
-            _cell("Name", structureNameController, isNumber: false),
-            _cell("Description", descriptionController, isNumber: false),
-            _cell("Length", lengthController),
-            _cell("Width", widthController),
+            _cell("Structure Name", nameController, isNumber: false),
+            _cell("Description", descController, isNumber: false),
+            _cellWithUnit(
+              "Length",
+              lengthController,
+              lengthUnit,
+              (v) => setState(() => lengthUnit = v!),
+              lengthUnits,
+            ),
+            _cellWithUnit(
+              "Width",
+              widthController,
+              widthUnit,
+              (v) => setState(() => widthUnit = v!),
+              lengthUnits,
+            ),
           ]),
           _divider(),
-
           _row([
-            _cell("Height", heightController),
-            _cell("Levels", levelsController),
+            _cellWithUnit(
+              "Total Height",
+              heightController,
+              heightUnit,
+              (v) => setState(() => heightUnit = v!),
+              lengthUnits,
+            ),
+            _cell("Number of Levels", levelsController),
             _cellDrop("Material", materialType, [
               "Concrete",
               "Steel",
               "Composite",
             ], (v) => setState(() => materialType = v!)),
-            _cell("Design Load", designLoadController),
+            _cellWithUnit(
+              "Design Load",
+              designLoadController,
+              dLoadUnit,
+              (v) => setState(() => dLoadUnit = v!),
+              loadUnits,
+            ),
           ]),
           _divider(),
-
           _row([
-            _cell("Live Load", liveLoadController),
-            _cell("Wind Load", windLoadController),
-            _cell("Seismic", seismicZoneController),
+            _cellWithUnit(
+              "Live Load",
+              liveLoadController,
+              lLoadUnit,
+              (v) => setState(() => lLoadUnit = v!),
+              loadUnits,
+            ),
+            _cellWithUnit(
+              "Wind Load",
+              windLoadController,
+              windUnit,
+              (v) => setState(() => windUnit = v!),
+              loadUnits,
+            ),
+            _cell("Seismic Zone", seismicZoneController),
             _cellDrop("Foundation", foundationType, [
               "Isolated Footing",
               "Raft",
@@ -166,16 +185,27 @@ class _CustomStructureInputScreenState
             ], (v) => setState(() => foundationType = v!)),
           ]),
           _divider(),
-
           _row([
-            _cell("Depth", foundationDepthController),
-            _cell("Soil", soilController),
+            _cellWithUnit(
+              "Found. Depth",
+              foundationDepthController,
+              depthUnit,
+              (v) => setState(() => depthUnit = v!),
+              lengthUnits,
+            ),
+            _cellWithUnit(
+              "Soil Capacity",
+              soilController,
+              soilUnit,
+              (v) => setState(() => soilUnit = v!),
+              soilUnits,
+            ),
             _cellDrop("Scale", scale, [
               "1:50",
               "1:100",
               "1:200",
             ], (v) => setState(() => scale = v!)),
-            _cellDrop("Sheet", sheetSize, [
+            _cellDrop("Sheet Size", sheetSize, [
               "A0",
               "A1",
               "A2",
@@ -183,24 +213,18 @@ class _CustomStructureInputScreenState
             ], (v) => setState(() => sheetSize = v!)),
           ]),
           _divider(),
-
-          _row([
-            _cellDrop("Detail", detailLevel, [
-              "Concept",
-              "Standard",
-              "Construction",
-            ], (v) => setState(() => detailLevel = v!)),
-            const Expanded(child: SizedBox()),
-            const Expanded(child: SizedBox()),
-            const Expanded(child: SizedBox()),
-          ]),
-          _divider(),
-
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: _submitButton(),
+            child: Row(
+              children: [
+                _cellDrop("Detail Level", detailLevel, [
+                  "Concept",
+                  "Standard",
+                  "Construction",
+                ], (v) => setState(() => detailLevel = v!)),
+                const Spacer(flex: 3),
+                _submitButton(),
+              ],
             ),
           ),
         ],
@@ -219,31 +243,81 @@ class _CustomStructureInputScreenState
         children: [
           Padding(
             padding: const EdgeInsets.all(10),
-            child: Text("Project: ${project?.name ?? "Unnamed"}"),
+            child: Text(
+              "Project: ${project?.name ?? "Unnamed"}",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
-          _mobileField("Name", structureNameController, isNumber: false),
-          _mobileField("Description", descriptionController, isNumber: false),
-          _mobileField("Length", lengthController),
-          _mobileField("Width", widthController),
-          _mobileField("Height", heightController),
+          _mobileField("Structure Name", nameController, isNumber: false),
+          _mobileField("Description", descController, isNumber: false),
+          _mobileWithUnit(
+            "Length",
+            lengthController,
+            lengthUnit,
+            (v) => setState(() => lengthUnit = v!),
+            lengthUnits,
+          ),
+          _mobileWithUnit(
+            "Width",
+            widthController,
+            widthUnit,
+            (v) => setState(() => widthUnit = v!),
+            lengthUnits,
+          ),
+          _mobileWithUnit(
+            "Height",
+            heightController,
+            heightUnit,
+            (v) => setState(() => heightUnit = v!),
+            lengthUnits,
+          ),
           _mobileField("Levels", levelsController),
           _mobileDrop("Material", materialType, [
             "Concrete",
             "Steel",
             "Composite",
           ], (v) => setState(() => materialType = v!)),
-          _mobileField("Design Load", designLoadController),
-          _mobileField("Live Load", liveLoadController),
-          _mobileField("Wind Load", windLoadController),
-          _mobileField("Seismic", seismicZoneController),
+          _mobileWithUnit(
+            "Design Load",
+            designLoadController,
+            dLoadUnit,
+            (v) => setState(() => dLoadUnit = v!),
+            loadUnits,
+          ),
+          _mobileWithUnit(
+            "Live Load",
+            liveLoadController,
+            lLoadUnit,
+            (v) => setState(() => lLoadUnit = v!),
+            loadUnits,
+          ),
+          _mobileWithUnit(
+            "Wind Load",
+            windLoadController,
+            windUnit,
+            (v) => setState(() => windUnit = v!),
+            loadUnits,
+          ),
+          _mobileField("Seismic Zone", seismicZoneController),
           _mobileDrop("Foundation", foundationType, [
-            "Isolated Footing",
+            "Isolated",
             "Raft",
             "Pile",
-            "Strip Footing",
           ], (v) => setState(() => foundationType = v!)),
-          _mobileField("Depth", foundationDepthController),
-          _mobileField("Soil", soilController),
+          _mobileWithUnit(
+            "Foundation Depth",
+            foundationDepthController,
+            depthUnit,
+            (v) => setState(() => depthUnit = v!),
+            lengthUnits,
+          ),
+          _mobileWithUnit(
+            "Soil Capacity",
+            soilController,
+            soilUnit,
+            (v) => setState(() => soilUnit = v!),
+            soilUnits,
+          ),
           _mobileDrop("Scale", scale, [
             "1:50",
             "1:100",
@@ -255,7 +329,7 @@ class _CustomStructureInputScreenState
             "A2",
             "A3",
           ], (v) => setState(() => sheetSize = v!)),
-          _mobileDrop("Detail", detailLevel, [
+          _mobileDrop("Detail Level", detailLevel, [
             "Concept",
             "Standard",
             "Construction",
@@ -268,7 +342,80 @@ class _CustomStructureInputScreenState
     );
   }
 
-  /// COMMON
+  /// ================= REUSABLE HELPERS =================
+
+  Widget _unitPicker(
+    String currentVal,
+    List<String> options,
+    Function(String?) onChanged,
+  ) {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: currentVal,
+        icon: const Icon(Icons.arrow_drop_down, size: 14, color: secondaryBlue),
+        style: const TextStyle(
+          color: primaryBlue,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+        items: options
+            .map((val) => DropdownMenuItem(value: val, child: Text(val)))
+            .toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _cellWithUnit(
+    String label,
+    TextEditingController c,
+    String unit,
+    Function(String?) onUnitChanged,
+    List<String> opts,
+  ) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: TextFormField(
+          controller: c,
+          keyboardType: TextInputType.number,
+          validator: (v) => v!.isEmpty ? "Required" : null,
+          decoration: InputDecoration(
+            labelText: label,
+            suffixIcon: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: _unitPicker(unit, opts, onUnitChanged),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _mobileWithUnit(
+    String label,
+    TextEditingController c,
+    String unit,
+    Function(String?) onUnitChanged,
+    List<String> opts,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: TextFormField(
+        controller: c,
+        keyboardType: TextInputType.number,
+        validator: (v) => v!.isEmpty ? "Required" : null,
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _unitPicker(unit, opts, onUnitChanged),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _row(List<Widget> cells) =>
       IntrinsicHeight(child: Row(children: cells));
 
@@ -348,70 +495,11 @@ class _CustomStructureInputScreenState
     return SizedBox(
       height: 40,
       child: ElevatedButton(
-        onPressed: isLoading
-            ? null
-            : () async {
-                if (!formKey.currentState!.validate()) return;
-
-                setState(() => isLoading = true);
-
-                Map<String, dynamic> data = {
-                  "structure": {
-                    "name": structureNameController.text,
-                    "description": descriptionController.text,
-                    "material": materialType,
-                  },
-                  "geometry": {
-                    "length": lengthController.text,
-                    "width": widthController.text,
-                    "height": heightController.text,
-                    "levels": levelsController.text,
-                  },
-                  "loads": {
-                    "designLoad": designLoadController.text,
-                    "liveLoad": liveLoadController.text,
-                    "windLoad": windLoadController.text,
-                    "seismicZone": seismicZoneController.text,
-                  },
-                  "foundation": {
-                    "type": foundationType,
-                    "depth": foundationDepthController.text,
-                    "soilBearingCapacity": soilController.text,
-                  },
-                  "drawing": {
-                    "scale": scale,
-                    "sheetSize": sheetSize,
-                    "detailLevel": detailLevel,
-                  },
-                };
-
-                try {
-                  final response = await controller.generateDrawingFromInputs(
-                    type: "custom",
-                    inputData: data,
-                  );
-
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    response["success"] == true ? "Success" : "Error",
-                    response["message"] ?? "Something went wrong",
-                    backgroundColor: response["success"] == true
-                        ? Colors.green
-                        : Colors.red,
-                    colorText: Colors.white,
-                  );
-                } catch (e) {
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    "Error",
-                    e.toString(),
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+        ),
+        onPressed: isLoading ? null : _handleSubmission,
         child: isLoading
             ? const SizedBox(
                 height: 18,
@@ -421,8 +509,65 @@ class _CustomStructureInputScreenState
                   color: Colors.white,
                 ),
               )
-            : const Text("Generate Custom Structure Drawing"),
+            : const Text("Generate Custom Drawing"),
       ),
     );
+  }
+
+  void _handleSubmission() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => isLoading = true);
+
+    Map<String, dynamic> data = {
+      "structure": {
+        "name": nameController.text,
+        "description": descController.text,
+        "material": materialType,
+      },
+      "geometry": {
+        "length": {"val": lengthController.text, "unit": lengthUnit},
+        "width": {"val": widthController.text, "unit": widthUnit},
+        "height": {"val": heightController.text, "unit": heightUnit},
+        "levels": levelsController.text,
+      },
+      "loads": {
+        "designLoad": {"val": designLoadController.text, "unit": dLoadUnit},
+        "liveLoad": {"val": liveLoadController.text, "unit": lLoadUnit},
+        "windLoad": {"val": windLoadController.text, "unit": windUnit},
+        "seismicZone": seismicZoneController.text,
+      },
+      "foundation": {
+        "type": foundationType,
+        "depth": {"val": foundationDepthController.text, "unit": depthUnit},
+        "soilBearingCapacity": {"val": soilController.text, "unit": soilUnit},
+      },
+      "drawing": {
+        "scale": scale,
+        "sheetSize": sheetSize,
+        "detailLevel": detailLevel,
+      },
+    };
+
+    try {
+      final response = await controller.generateDrawingFromInputs(
+        type: "custom",
+        inputData: data,
+      );
+      setState(() => isLoading = false);
+      Get.snackbar(
+        response["success"] ? "Success" : "Error",
+        response["message"] ?? "",
+        backgroundColor: response["success"] ? Colors.green : Colors.red,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      setState(() => isLoading = false);
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 }

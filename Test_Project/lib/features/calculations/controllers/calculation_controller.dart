@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:test_project/core/constants/prompt_builder.dart';
+import 'package:build_pro/core/constants/prompt_builder.dart';
 
 import '../../../core/constants/route_constants.dart';
 import '../../../data/models/project_model.dart';
@@ -11,7 +11,8 @@ import '../../../data/repositories/ai_repository.dart';
 
 class CalculationController extends GetxController {
   final AiRepository _aiRepository = AiRepository();
-
+  final List<String> unitOptions = ["meter", "feet", "inch", "centimeter"];
+  var selectedUnit = "meter".obs;
   final RxBool isLoading = false.obs;
   final RxString statusMessage = "".obs;
   final RxString imageUrl = "".obs;

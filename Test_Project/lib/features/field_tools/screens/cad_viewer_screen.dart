@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 
 class CadViewerScreen extends StatefulWidget {
   const CadViewerScreen({super.key});
@@ -156,7 +156,10 @@ class _CadViewerScreenState extends State<CadViewerScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text("Open Drawing"),
+                              child: const Text(
+                                "Open Drawing",
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                           ],
                         ),
@@ -225,7 +228,10 @@ class _CadViewerScreenState extends State<CadViewerScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
-                                child: const Text("ADD"),
+                                child: const Text(
+                                  "ADD",
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
                           ],

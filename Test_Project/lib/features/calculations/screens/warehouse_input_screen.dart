@@ -13,71 +13,156 @@ class _WarehouseInputScreenState extends State<WarehouseInputScreen> {
   final CalculationController controller = Get.find();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  /// 🎨 COLORS
+  bool isLoading = false;
+
+  /// 🎨 BRAND COLORS
   static const Color primaryBlue = Color(0xFF1E3A8A);
-  static const Color accentBlue = Color(0xFF3B82F6);
+  static const Color secondaryBlue = Color(0xFF3B82F6);
   static const Color bgColor = Color(0xFFF8FAFC);
 
-  /// CONTROLLERS (UNCHANGED)
-  final projectNameController = TextEditingController();
-  final locationController = TextEditingController();
+  /// 📏 UNIT SYSTEM
+  String selectedUnit = "meter";
+  final List<String> unitOptions = [
+    "feet",
+    "inch",
+    "centimeter",
+    "yard",
+    "meter",
+  ];
 
+  /// CONTROLLERS
+  final projectNameController = TextEditingController();
   final lengthController = TextEditingController();
   final widthController = TextEditingController();
   final heightController = TextEditingController();
-
   final columnSpacingController = TextEditingController();
-  final baysController = TextEditingController();
-
   final rackHeightController = TextEditingController();
-  final rackRowsController = TextEditingController();
   final aisleWidthController = TextEditingController();
-
-  final docksController = TextEditingController();
-  final dockWidthController = TextEditingController();
-  final truckRadiusController = TextEditingController();
-
   final floorLoadController = TextEditingController();
-  final forkliftLoadController = TextEditingController();
 
-  String roofType = "Steel Truss";
-
-  String scale = "1:200";
-  String sheetSize = "A1";
-  String detailLevel = "Standard";
+  @override
+  void dispose() {
+    for (var c in [
+      projectNameController,
+      lengthController,
+      widthController,
+      heightController,
+      columnSpacingController,
+      rackHeightController,
+      aisleWidthController,
+      floorLoadController,
+    ]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width > 800;
-
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text("Warehouse Design"),
+        title: const Text(
+          "Warehouse Design Panel",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: primaryBlue,
         elevation: 0,
+        actions: [_unitPicker(), const SizedBox(width: 15)],
       ),
-
-      /// 🔥 GRADIENT
       body: Container(
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [primaryBlue, accentBlue],
+            colors: [primaryBlue, secondaryBlue],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 1400),
-            padding: const EdgeInsets.all(20),
-
+            constraints: const BoxConstraints(maxWidth: 1000),
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.98),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
             child: Form(
               key: formKey,
-              child: isDesktop
-                  ? _desktopLayout()
-                  : SingleChildScrollView(child: _mobileLayout()),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _sectionLabel("Project Identity"),
+                    _inputField(
+                      "Project Name / File ID",
+                      projectNameController,
+                      isNumber: false,
+                    ),
+
+                    _divider(),
+                    _sectionLabel("Structural Dimensions"),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _inputField("Total Length", lengthController),
+                        ),
+                        Expanded(
+                          child: _inputField("Total Width", widthController),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _inputField("Eave Height", heightController),
+                        ),
+                        Expanded(
+                          child: _inputField(
+                            "Column Spacing",
+                            columnSpacingController,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    _divider(),
+                    _sectionLabel("Internal Logistics"),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _inputField(
+                            "Max Rack Height",
+                            rackHeightController,
+                          ),
+                        ),
+                        Expanded(
+                          child: _inputField(
+                            "Aisle Clearance",
+                            aisleWidthController,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _inputField(
+                      "Floor Load Capacity (kN/sq $selectedUnit)",
+                      floorLoadController,
+                    ),
+
+                    const SizedBox(height: 40),
+                    Center(child: _submitBtn()),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -85,261 +170,179 @@ class _WarehouseInputScreenState extends State<WarehouseInputScreen> {
     );
   }
 
-  // ================= DESKTOP =================
-  Widget _desktopLayout() {
+  Widget _unitPicker() {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: primaryBlue.withOpacity(0.1)),
       ),
-      child: Column(
-        children: [
-          _row([
-            _cell("Project Name", projectNameController, false),
-            _cell("Location", locationController, false),
-            _cell("Length", lengthController, true),
-            _cell("Width", widthController, true),
-          ]),
-          _divider(),
-
-          _row([
-            _cell("Height", heightController, true),
-            _cell("Column Spacing", columnSpacingController, true),
-            _cell("Bays", baysController, true),
-            _cellDrop("Roof Type", roofType, [
-              "Steel Truss",
-              "Portal Frame",
-            ], (v) => setState(() => roofType = v!)),
-          ]),
-          _divider(),
-
-          _row([
-            _cell("Rack Height", rackHeightController, true),
-            _cell("Rack Rows", rackRowsController, true),
-            _cell("Aisle Width", aisleWidthController, true),
-            _cell("Docks", docksController, true),
-          ]),
-          _divider(),
-
-          _row([
-            _cell("Dock Width", dockWidthController, true),
-            _cell("Truck Radius", truckRadiusController, true),
-            _cell("Floor Load", floorLoadController, true),
-            _cell("Forklift Load", forkliftLoadController, true),
-          ]),
-          _divider(),
-
-          _row([
-            _cellDrop("Scale", scale, [
-              "1:100",
-              "1:200",
-              "1:500",
-            ], (v) => setState(() => scale = v!)),
-            _cellDrop("Sheet", sheetSize, [
-              "A0",
-              "A1",
-              "A2",
-              "A3",
-            ], (v) => setState(() => sheetSize = v!)),
-            _cellDrop("Detail", detailLevel, [
-              "Concept",
-              "Standard",
-              "Construction",
-            ], (v) => setState(() => detailLevel = v!)),
-            const Expanded(child: SizedBox()),
-          ]),
-          _divider(),
-
-          Padding(padding: const EdgeInsets.all(16), child: _submitButton()),
-        ],
-      ),
-    );
-  }
-
-  // ================= MOBILE =================
-  Widget _mobileLayout() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          _mField("Project Name", projectNameController, false),
-          _mField("Location", locationController, false),
-          _mField("Length", lengthController, true),
-          _mField("Width", widthController, true),
-          _mField("Height", heightController, true),
-          _mField("Column Spacing", columnSpacingController, true),
-          _mField("Bays", baysController, true),
-          _mDrop("Roof Type", roofType, [
-            "Steel Truss",
-            "Portal Frame",
-          ], (v) => setState(() => roofType = v!)),
-          _mField("Rack Height", rackHeightController, true),
-          _mField("Rack Rows", rackRowsController, true),
-          _mField("Aisle Width", aisleWidthController, true),
-          _mField("Docks", docksController, true),
-          _mField("Dock Width", dockWidthController, true),
-          _mField("Truck Radius", truckRadiusController, true),
-          _mField("Floor Load", floorLoadController, true),
-          _mField("Forklift Load", forkliftLoadController, true),
-          _mDrop("Scale", scale, [
-            "1:100",
-            "1:200",
-            "1:500",
-          ], (v) => setState(() => scale = v!)),
-          _mDrop("Sheet", sheetSize, [
-            "A0",
-            "A1",
-            "A2",
-            "A3",
-          ], (v) => setState(() => sheetSize = v!)),
-          _mDrop("Detail", detailLevel, [
-            "Concept",
-            "Standard",
-            "Construction",
-          ], (v) => setState(() => detailLevel = v!)),
-
-          const SizedBox(height: 20),
-          _submitButton(),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  // ================= BUTTON (UNCHANGED) =================
-  Widget _submitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton(
-        child: const Text("Generate Warehouse Drawing"),
-        onPressed: () {
-          if (!formKey.currentState!.validate()) return;
-
-          Map<String, dynamic> data = {
-            "project": {
-              "name": projectNameController.text,
-              "location": locationController.text,
-            },
-            "dimensions": {
-              "length": lengthController.text,
-              "width": widthController.text,
-              "height": heightController.text,
-            },
-            "structure": {
-              "columnSpacing": columnSpacingController.text,
-              "bays": baysController.text,
-              "roofType": roofType,
-            },
-            "storage": {
-              "rackHeight": rackHeightController.text,
-              "rackRows": rackRowsController.text,
-              "aisleWidth": aisleWidthController.text,
-            },
-            "dock": {
-              "docks": docksController.text,
-              "dockWidth": dockWidthController.text,
-              "truckRadius": truckRadiusController.text,
-            },
-            "floor": {
-              "loadCapacity": floorLoadController.text,
-              "forkliftLoad": forkliftLoadController.text,
-            },
-            "drawing": {
-              "scale": scale,
-              "sheetSize": sheetSize,
-              "detailLevel": detailLevel,
-            },
-          };
-
-          controller.generateDrawingFromInputs(
-            type: "warehouse",
-            inputData: data,
-          );
-        },
-      ),
-    );
-  }
-
-  // ================= COMMON =================
-  Widget _row(List<Widget> children) =>
-      IntrinsicHeight(child: Row(children: children));
-
-  Widget _cell(String label, TextEditingController c, bool isNumber) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: TextFormField(
-          controller: c,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-          validator: (v) => v == null || v.isEmpty ? "Required" : null,
-          decoration: InputDecoration(labelText: label),
-        ),
-      ),
-    );
-  }
-
-  Widget _cellDrop(
-    String label,
-    String value,
-    List<String> items,
-    Function(String?) onChanged,
-  ) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: DropdownButtonFormField(
-          value: value,
-          items: items
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedUnit,
+          items: unitOptions
+              .map(
+                (u) => DropdownMenuItem(
+                  value: u,
+                  child: Text(
+                    u.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: primaryBlue,
+                    ),
+                  ),
+                ),
+              )
               .toList(),
-          onChanged: onChanged,
-          decoration: InputDecoration(labelText: label),
+          onChanged: (v) => setState(() => selectedUnit = v!),
         ),
       ),
     );
   }
 
-  Widget _mField(String label, TextEditingController c, bool isNumber) {
+  Widget _sectionLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.only(bottom: 12, left: 8),
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+          color: primaryBlue,
+          fontWeight: FontWeight.w900,
+          fontSize: 11,
+          letterSpacing: 1.1,
+        ),
+      ),
+    );
+  }
+
+  Widget _inputField(
+    String label,
+    TextEditingController c, {
+    bool isNumber = true,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
       child: TextFormField(
         controller: c,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        validator: (v) => v == null || v.isEmpty ? "Required" : null,
-        decoration: InputDecoration(labelText: label),
+        keyboardType: isNumber
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.text,
+        validator: (v) => v!.isEmpty ? "Required" : null,
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          labelText: label,
+          suffixText: isNumber ? selectedUnit : null,
+          suffixStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+          filled: true,
+          fillColor: Colors.grey.shade50,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: primaryBlue, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _mDrop(
-    String label,
-    String value,
-    List<String> items,
-    Function(String?) onChanged,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(10),
-      child: DropdownButtonFormField(
-        value: value,
-        items: items
-            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-            .toList(),
-        onChanged: onChanged,
-        decoration: InputDecoration(labelText: label),
+  Widget _divider() => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 15),
+    child: Divider(color: Colors.grey.shade100, thickness: 1.5),
+  );
+
+  Widget _submitBtn() {
+    return SizedBox(
+      width: double.infinity,
+      height: 60,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 4,
+        ),
+        onPressed: isLoading ? null : _processData,
+        child: isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : const Text(
+                "GENERATE WAREHOUSE BLUEPRINT",
+                style: TextStyle(
+                  letterSpacing: 1.1,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
       ),
     );
   }
 
-  Widget _divider() => Divider(color: Colors.grey.shade200);
+  void _processData() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => isLoading = true);
+
+    final Map<String, dynamic> exportData = {
+      "config": {
+        "active_unit": selectedUnit,
+        "timestamp": DateTime.now().toIso8601String(),
+      },
+      "project_info": {"name": projectNameController.text},
+      "measurements": {
+        "length": lengthController.text,
+        "width": widthController.text,
+        "height": heightController.text,
+        "spacing": columnSpacingController.text,
+      },
+      "logistics": {
+        "rack_height": rackHeightController.text,
+        "aisle_width": aisleWidthController.text,
+        "floor_load": floorLoadController.text,
+      },
+    };
+
+    try {
+      await controller.generateDrawingFromInputs(
+        type: "warehouse",
+        inputData: exportData,
+      );
+      Get.snackbar(
+        "Success",
+        "Generating drawing using $selectedUnit units",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Check your inputs and unit settings",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
 }

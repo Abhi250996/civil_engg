@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 import '../controllers/field_tools_controller.dart';
 import '../widgets/tool_card.dart';
 
@@ -13,8 +14,10 @@ class FieldToolsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<FieldToolsController>();
 
-    return Scaffold(
-      body: Container(
+    return AppScaffold(
+      title: "Field Tools",
+      showBack: true,
+      child: Container(
         /// 🔥 GRADIENT BACKGROUND
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -53,16 +56,6 @@ class FieldToolsScreen extends StatelessWidget {
                     return Column(
                       children: [
                         /// HEADER (INSIDE CARD)
-                        const Text(
-                          "FIELD TOOLS",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: primaryBlue,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-
                         const SizedBox(height: 8),
 
                         Text(

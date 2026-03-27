@@ -58,14 +58,11 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1000),
-
             child: Padding(
-              padding: const EdgeInsets.all(20),
-
+              padding: const EdgeInsets.all(12),
               child: Column(
                 children: [
                   /// HEADER
@@ -80,102 +77,29 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
                   /// MAIN CARD
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-
                       child: Form(
                         key: _formKey,
                         child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              _section("Report Info", [
-                                _field(titleController, "Title*", true),
-                                _dropdown(
-                                  "Type",
-                                  reportType,
-                                  ["Structural", "Survey", "Inspection"],
-                                  (v) => setState(() => reportType = v),
-                                ),
-                                _dropdown(
-                                  "Category",
-                                  category,
-                                  ["Engineering", "Safety"],
-                                  (v) => setState(() => category = v),
-                                ),
-                              ], isDesktop),
-
-                              const SizedBox(height: 20),
-
-                              _section("Stakeholders", [
-                                _field(authorController, "Author", false),
-                                _field(engineerController, "Engineer", false),
-                                _field(
-                                  organizationController,
-                                  "Organization",
-                                  false,
-                                ),
-                              ], isDesktop),
-
-                              const SizedBox(height: 20),
-
-                              _filePicker(),
-
-                              const SizedBox(height: 20),
-
-                              _section("Metadata", [
-                                _field(locationController, "Location", false),
-                                _dropdown("Status", status, [
-                                  "Draft",
-                                  "Submitted",
-                                  "Approved",
-                                ], (v) => setState(() => status = v)),
-                              ], isDesktop),
-
-                              const SizedBox(height: 20),
-
-                              /// DESCRIPTION
-                              TextFormField(
-                                controller: descriptionController,
-                                validator: (v) => Validators.validateRequired(
-                                  v,
-                                  "Description",
-                                ),
-                                maxLines: 3,
-                                decoration: InputDecoration(
-                                  labelText: "Description*",
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: ElevatedButton(
-                                  onPressed: createReport,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: accentBlue,
-                                  ),
-                                  child: const Text("GENERATE REPORT"),
-                                ),
-                              ),
-                            ],
-                          ),
+                          physics: isDesktop
+                              ? const ClampingScrollPhysics()
+                              : const BouncingScrollPhysics(),
+                          child: Column(children: _buildFormContent(isDesktop)),
                         ),
                       ),
                     ),
@@ -189,38 +113,122 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     );
   }
 
-  /// ================= HELPERS =================
+  /// ================= FORM CONTENT =================
+  List<Widget> _buildFormContent(bool isDesktop) {
+    return [
+      _section("Report Info", [
+        _field(titleController, "Title*", true),
+        _dropdown("Type", reportType, [
+          "Structural",
+          "Survey",
+          "Inspection",
+        ], (v) => setState(() => reportType = v)),
+        _dropdown("Category", category, [
+          "Engineering",
+          "Safety",
+        ], (v) => setState(() => category = v)),
+      ], isDesktop),
 
+      const SizedBox(height: 8),
+
+      _section("Stakeholders", [
+        _field(authorController, "Author", false),
+        _field(engineerController, "Engineer", false),
+        _field(organizationController, "Organization", false),
+      ], isDesktop),
+
+      const SizedBox(height: 8),
+
+      _filePicker(),
+
+      const SizedBox(height: 8),
+
+      _section("Metadata", [
+        _field(locationController, "Location", false),
+        _dropdown("Status", status, [
+          "Draft",
+          "Submitted",
+          "Approved",
+        ], (v) => setState(() => status = v)),
+      ], isDesktop),
+
+      const SizedBox(height: 8),
+
+      TextFormField(
+        controller: descriptionController,
+        validator: (v) => Validators.validateRequired(v, "Description"),
+        maxLines: 3,
+        decoration: InputDecoration(
+          labelText: "Description*",
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 10,
+          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
+
+      const SizedBox(height: 10),
+
+      Align(
+        alignment: Alignment.centerRight,
+        child: ElevatedButton(
+          onPressed: createReport,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: accentBlue,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          child: const Text(
+            "GENERATE REPORT",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  /// ================= SECTION =================
   Widget _section(String title, List<Widget> fields, bool isDesktop) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        const SizedBox(height: 6),
         GridView.count(
           crossAxisCount: isDesktop ? 2 : 1,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 3.5,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: isDesktop ? 8 : 3.5,
           children: fields,
         ),
       ],
     );
   }
 
+  /// ================= FIELD =================
   Widget _field(TextEditingController c, String label, bool req) {
     return TextFormField(
       controller: c,
       validator: req ? (v) => Validators.validateRequired(v, label) : null,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 10,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
+  /// ================= DROPDOWN =================
   Widget _dropdown(
     String label,
     String? value,
@@ -235,11 +243,17 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 10,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
+  /// ================= FILE PICKER =================
   Widget _filePicker() {
     return Obx(
       () => TextFormField(
@@ -249,7 +263,12 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         ),
         decoration: InputDecoration(
           labelText: "Attach File",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 10,
+          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           suffixIcon: IconButton(
             icon: const Icon(Icons.upload),
             onPressed: controller.pickFile,

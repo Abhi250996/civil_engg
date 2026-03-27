@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 
 class SteelCalcScreen extends StatefulWidget {
   const SteelCalcScreen({super.key});
@@ -264,7 +264,10 @@ class _SteelCalcScreenState extends State<SteelCalcScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: accentBlue,
                                 ),
-                                child: const Text("CALCULATE"),
+                                child: const Text(
+                                  "CALCULATE",
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
 

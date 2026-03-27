@@ -11,8 +11,8 @@ class AiCivilController extends GetxController {
 
   /// API ENDPOINTS
   /// Android emulator -> http://10.0.2.2:3000
-  /// Web/Desktop -> http://localhost:3000
-  final String baseUrl = "http://localhost:3000";
+  /// Web/Desktop -> https://civilengg-production.up.railway.app
+  final String baseUrl = "https://civilengg-production.up.railway.app";
 
   late final String chatApi;
   late final String imageApi;

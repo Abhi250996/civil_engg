@@ -5,7 +5,7 @@ class ApiConfig {
   static String get baseUrl {
     /// 🌐 WEB
     if (kIsWeb) {
-      return "http://localhost:3000";
+      return "https://civilengg-production.up.railway.app";
     }
 
     /// 🤖 ANDROID EMULATOR
@@ -19,7 +19,7 @@ class ApiConfig {
             Platform.isMacOS ||
             Platform.isWindows ||
             Platform.isLinux)) {
-      return "http://localhost:3000";
+      return "https://civilengg-production.up.railway.app";
     }
 
     /// 📱 REAL DEVICE (CHANGE THIS)

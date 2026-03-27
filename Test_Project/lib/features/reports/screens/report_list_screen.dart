@@ -53,6 +53,10 @@ class _ReportListScreenState extends State<ReportListScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      IconButton(
+                        onPressed: Get.back,
+                        icon: Icon(Icons.arrow_back, color: Colors.white),
+                      ),
                       const Text(
                         "TECHNICAL REPORTS",
                         style: TextStyle(

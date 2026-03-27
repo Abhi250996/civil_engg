@@ -216,7 +216,10 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: accentBlue,
                                   ),
-                                  child: const Text("SAVE PROJECT"),
+                                  child: const Text(
+                                    "SAVE PROJECT",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
                             ],
@@ -248,7 +251,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 3.5,
+          childAspectRatio: isDesktop ? 8 : 3.5,
           children: fields,
         ),
       ],

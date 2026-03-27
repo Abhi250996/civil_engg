@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:test_project/core/utils/app_scaffold.dart';
+import 'package:build_pro/core/utils/app_scaffold.dart';
 
 class SunPathScreen extends StatefulWidget {
   const SunPathScreen({super.key});
@@ -202,7 +202,10 @@ class _SunPathScreenState extends State<SunPathScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: accentBlue,
                                   ),
-                                  child: const Text("Select Date"),
+                                  child: const Text(
+                                    "Select Date",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ],
                             ),
@@ -217,7 +220,10 @@ class _SunPathScreenState extends State<SunPathScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: accentBlue,
                                 ),
-                                child: const Text("CALCULATE"),
+                                child: const Text(
+                                  "CALCULATE",
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
 

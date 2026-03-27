@@ -15,87 +15,108 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
 
   bool isLoading = false;
 
-  /// 🎨 COLORS
-  static const Color primaryBlue = Color(0xFF7b7eba);
-  static const Color accentBlue = Color(0xFFbdbcdc);
-  static const Color accentBlue2 = Color(0xFFdeddee);
+  /// 🎨 BRAND COLORS
+  static const Color primaryBlue = Color(0xFF1E3A8A);
+  static const Color secondaryBlue = Color(0xFF3B82F6);
+  static const Color bgColor = Color(0xFFF8FAFC);
+
+  /// 📏 GLOBAL UNIT SYSTEM
+  String selectedUnit = "meter";
+  final List<String> globalUnits = ["feet", "inch", "centimeter", "meter"];
 
   /// CONTROLLERS
   final projectNameController = TextEditingController();
   final locationController = TextEditingController();
-
   final boundaryLengthController = TextEditingController();
   final fenceHeightController = TextEditingController();
-
-  String fenceType = "Chain Link";
   final postSpacingController = TextEditingController();
-
   final postDiameterController = TextEditingController();
   final postDepthController = TextEditingController();
-  final concreteGradeController = TextEditingController();
-
-  final gateCountController = TextEditingController();
+  final concreteGradeController = TextEditingController(text: "M20");
+  final gateCountController = TextEditingController(text: "1");
   final gateWidthController = TextEditingController();
-  String gateType = "Sliding";
 
+  /// STATES
+  String fenceType = "Chain Link";
+  String gateType = "Sliding";
   String scale = "1:100";
   String sheetSize = "A2";
   String detailLevel = "Standard";
 
-  /// RESPONSIVE (KEPT)
-  int getCrossAxisCount(double width) {
-    if (width > 1200) return 5;
-    if (width > 800) return 3;
-    return 2;
-  }
-
-  Widget responsiveGrid(List<Widget> children) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return GridView.count(
-          crossAxisCount: getCrossAxisCount(constraints.maxWidth),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: children,
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final project = Get.arguments?['project'];
-    final isDesktop = MediaQuery.of(context).size.width > 700;
+    final isDesktop = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text("Fence / Boundary Design"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
         elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: primaryBlue,
+        actions: [_globalUnitPicker(), const SizedBox(width: 15)],
       ),
-
-      /// GRADIENT
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [primaryBlue, accentBlue, accentBlue2],
+            colors: [primaryBlue, secondaryBlue, bgColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 1500),
+            constraints: const BoxConstraints(maxWidth: 1400),
             padding: const EdgeInsets.all(14),
             child: Form(
               key: formKey,
-              child: isDesktop
-                  ? _desktopLayout(project)
-                  : SingleChildScrollView(child: _mobileLayout(project)),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: isDesktop
+                      ? _desktopLayout(project)
+                      : _mobileLayout(project),
+                ),
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _globalUnitPicker() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: primaryBlue.withOpacity(0.2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedUnit,
+          items: globalUnits
+              .map(
+                (u) => DropdownMenuItem(
+                  value: u,
+                  child: Text(
+                    u.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (v) => setState(() => selectedUnit = v!),
         ),
       ),
     );
@@ -103,158 +124,123 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
 
   // ─── DESKTOP ─────────────────────────
   Widget _desktopLayout(dynamic project) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text("Project: ${project?.name ?? "Unnamed"}"),
-            ),
-          ),
-          _divider(),
-
-          _row([
-            _cell("Project Name", projectNameController, isNumber: false),
-            _cell("Location", locationController, isNumber: false),
-            _cell("Boundary Length", boundaryLengthController),
-            _cell("Fence Height", fenceHeightController),
-          ]),
-          _divider(),
-
-          _row([
-            _cellDrop("Fence Type", fenceType, [
-              "Chain Link",
-              "Barbed Wire",
-              "Steel Panel",
-              "Concrete Wall",
-            ], (v) => setState(() => fenceType = v!)),
-            _cell("Post Spacing", postSpacingController),
-            _cell("Post Diameter", postDiameterController),
-            _cell("Post Depth", postDepthController),
-          ]),
-          _divider(),
-
-          _row([
-            _cell("Concrete Grade", concreteGradeController, isNumber: false),
-            _cell("Gate Count", gateCountController),
-            _cell("Gate Width", gateWidthController),
-            _cellDrop("Gate Type", gateType, [
-              "Sliding",
-              "Hinged",
-            ], (v) => setState(() => gateType = v!)),
-          ]),
-          _divider(),
-
-          _row([
-            _cellDrop("Scale", scale, [
-              "1:50",
-              "1:100",
-              "1:200",
-            ], (v) => setState(() => scale = v!)),
-            _cellDrop("Sheet", sheetSize, [
-              "A0",
-              "A1",
-              "A2",
-              "A3",
-            ], (v) => setState(() => sheetSize = v!)),
-            _cellDrop("Detail", detailLevel, [
-              "Concept",
-              "Standard",
-              "Construction",
-            ], (v) => setState(() => detailLevel = v!)),
-            const Expanded(child: SizedBox()),
-          ]),
-          _divider(),
-
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: _submitButton(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── MOBILE ─────────────────────────
-  Widget _mobileLayout(dynamic project) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Text("Project: ${project?.name ?? "Unnamed"}"),
-          ),
-          _mobileField("Project Name", projectNameController, isNumber: false),
-          _mobileField("Location", locationController, isNumber: false),
-          _mobileField("Boundary Length", boundaryLengthController),
-          _mobileField("Fence Height", fenceHeightController),
-          _mobileDrop("Fence Type", fenceType, [
+    return Column(
+      children: [
+        _sectionTitle("Site Context - ${project?.name ?? "New Project"}"),
+        _row([
+          _cell("Project Name", projectNameController, isNumber: false),
+          _cell("Location", locationController, isNumber: false),
+          _cell("Boundary Length ($selectedUnit)", boundaryLengthController),
+          _cell("Fence Height ($selectedUnit)", fenceHeightController),
+        ]),
+        _divider(),
+        _sectionTitle("Fence Specifications"),
+        _row([
+          _cellDrop("Fence Type", fenceType, [
             "Chain Link",
             "Barbed Wire",
             "Steel Panel",
             "Concrete Wall",
           ], (v) => setState(() => fenceType = v!)),
-          _mobileField("Post Spacing", postSpacingController),
-          _mobileField("Post Diameter", postDiameterController),
-          _mobileField("Post Depth", postDepthController),
-          _mobileField(
-            "Concrete Grade",
-            concreteGradeController,
-            isNumber: false,
-          ),
-          _mobileField("Gate Count", gateCountController),
-          _mobileField("Gate Width", gateWidthController),
-          _mobileDrop("Gate Type", gateType, [
+          _cell("Post Spacing ($selectedUnit)", postSpacingController),
+          _cell("Post Diameter (mm)", postDiameterController),
+          _cell("Post Depth ($selectedUnit)", postDepthController),
+        ]),
+        _divider(),
+        _sectionTitle("Structural & Access"),
+        _row([
+          _cell("Concrete Grade", concreteGradeController, isNumber: false),
+          _cell("Gate Count", gateCountController),
+          _cell("Gate Width ($selectedUnit)", gateWidthController),
+          _cellDrop("Gate Type", gateType, [
             "Sliding",
             "Hinged",
+            "Swing",
           ], (v) => setState(() => gateType = v!)),
-          _mobileDrop("Scale", scale, [
+        ]),
+        _divider(),
+        _sectionTitle("Blueprint Settings"),
+        _row([
+          _cellDrop("Scale", scale, [
             "1:50",
             "1:100",
             "1:200",
           ], (v) => setState(() => scale = v!)),
-          _mobileDrop("Sheet", sheetSize, [
+          _cellDrop("Sheet Size", sheetSize, [
             "A0",
             "A1",
             "A2",
             "A3",
           ], (v) => setState(() => sheetSize = v!)),
-          _mobileDrop("Detail", detailLevel, [
+          _cellDrop("Detail Level", detailLevel, [
             "Concept",
             "Standard",
             "Construction",
           ], (v) => setState(() => detailLevel = v!)),
-          const SizedBox(height: 10),
-          _submitButton(),
-          const SizedBox(height: 10),
-        ],
+          const Expanded(child: SizedBox()),
+        ]),
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: _submitButton(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── MOBILE ─────────────────────────
+  Widget _mobileLayout(dynamic project) {
+    return Column(
+      children: [
+        _sectionTitle("Boundary Overview"),
+        _mobileField("Project Name", projectNameController, isNumber: false),
+        _mobileField(
+          "Boundary Length ($selectedUnit)",
+          boundaryLengthController,
+        ),
+        _mobileDrop("Fence Type", fenceType, [
+          "Chain Link",
+          "Barbed Wire",
+          "Steel Panel",
+        ], (v) => setState(() => fenceType = v!)),
+        _sectionTitle("Post & Foundation"),
+        _mobileField("Post Spacing ($selectedUnit)", postSpacingController),
+        _mobileField("Post Depth ($selectedUnit)", postDepthController),
+        _sectionTitle("Access Control"),
+        _mobileField("Gate Count", gateCountController),
+        _mobileDrop("Gate Type", gateType, [
+          "Sliding",
+          "Hinged",
+        ], (v) => setState(() => gateType = v!)),
+        const SizedBox(height: 10),
+        _submitButton(),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  /// ================= UI HELPERS =================
+
+  Widget _sectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 15, top: 15, bottom: 5),
+        child: Text(
+          title.toUpperCase(),
+          style: const TextStyle(
+            color: primaryBlue,
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
+            letterSpacing: 1.1,
+          ),
+        ),
       ),
     );
   }
 
-  /// COMMON
   Widget _row(List<Widget> cells) =>
       IntrinsicHeight(child: Row(children: cells));
 
@@ -264,9 +250,14 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
         padding: const EdgeInsets.all(10),
         child: TextFormField(
           controller: c,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          keyboardType: isNumber
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
           validator: (v) => v!.isEmpty ? "Required" : null,
-          decoration: InputDecoration(labelText: label),
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
         ),
       ),
     );
@@ -287,7 +278,10 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
               .toList(),
           onChanged: onChanged,
-          decoration: InputDecoration(labelText: label),
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
         ),
       ),
     );
@@ -299,12 +293,17 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
     bool isNumber = true,
   }) {
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
       child: TextFormField(
         controller: c,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        keyboardType: isNumber
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.text,
         validator: (v) => v!.isEmpty ? "Required" : null,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
       ),
     );
   }
@@ -316,99 +315,105 @@ class _FenceInputScreenState extends State<FenceInputScreen> {
     Function(String?) onChanged,
   ) {
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
       child: DropdownButtonFormField(
         value: value,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))
             .toList(),
         onChanged: onChanged,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
       ),
     );
   }
 
-  Widget _divider() => Divider(color: Colors.grey.shade200);
+  Widget _divider() => Divider(color: Colors.grey.shade300, height: 1);
 
   Widget _submitButton() {
     return SizedBox(
-      height: 40,
+      height: 45,
+      width: 280,
       child: ElevatedButton(
-        onPressed: isLoading
-            ? null
-            : () async {
-                if (!formKey.currentState!.validate()) return;
-
-                setState(() => isLoading = true);
-
-                Map<String, dynamic> data = {
-                  "project": {
-                    "name": projectNameController.text,
-                    "location": locationController.text,
-                  },
-                  "boundary": {
-                    "length": boundaryLengthController.text,
-                    "height": fenceHeightController.text,
-                  },
-                  "fence": {
-                    "type": fenceType,
-                    "postSpacing": postSpacingController.text,
-                  },
-                  "structure": {
-                    "postDiameter": postDiameterController.text,
-                    "postDepth": postDepthController.text,
-                    "concreteGrade": concreteGradeController.text,
-                  },
-                  "gate": {
-                    "count": gateCountController.text,
-                    "width": gateWidthController.text,
-                    "type": gateType,
-                  },
-                  "drawing": {
-                    "scale": scale,
-                    "sheetSize": sheetSize,
-                    "detailLevel": detailLevel,
-                  },
-                };
-
-                try {
-                  final response = await controller.generateDrawingFromInputs(
-                    type: "fence",
-                    inputData: data,
-                  );
-
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    response["success"] == true ? "Success" : "Error",
-                    response["message"] ?? "Something went wrong",
-                    backgroundColor: response["success"] == true
-                        ? Colors.green
-                        : Colors.red,
-                    colorText: Colors.white,
-                  );
-                } catch (e) {
-                  setState(() => isLoading = false);
-
-                  Get.snackbar(
-                    "Error",
-                    e.toString(),
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        onPressed: isLoading ? null : _handleSubmission,
         child: isLoading
             ? const SizedBox(
-                height: 18,
-                width: 18,
+                height: 20,
+                width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: Colors.white,
                 ),
               )
-            : const Text("Generate Fence Drawing"),
+            : const Text(
+                "Generate Fence Blueprint",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
       ),
     );
+  }
+
+  void _handleSubmission() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => isLoading = true);
+
+    Map<String, dynamic> data = {
+      "config": {"global_unit": selectedUnit},
+      "project": {
+        "name": projectNameController.text,
+        "location": locationController.text,
+      },
+      "boundary": {
+        "length": boundaryLengthController.text,
+        "height": fenceHeightController.text,
+        "unit": selectedUnit,
+      },
+      "fence": {
+        "type": fenceType,
+        "postSpacing": postSpacingController.text,
+        "postDiameter": postDiameterController.text,
+        "postDepth": postDepthController.text,
+        "concreteGrade": concreteGradeController.text,
+      },
+      "gate": {
+        "count": gateCountController.text,
+        "width": gateWidthController.text,
+        "type": gateType,
+      },
+      "drawing": {
+        "scale": scale,
+        "sheetSize": sheetSize,
+        "detailLevel": detailLevel,
+      },
+    };
+
+    try {
+      final res = await controller.generateDrawingFromInputs(
+        type: "fence",
+        inputData: data,
+      );
+      Get.snackbar(
+        "Success",
+        "Fence drawing generated successfully",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 }
